@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام أوامر الصرف | Payment Approval System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
+:root{--p:#1a5276;--pl:#2980b9;--pd:#0e3a56;--ac:#27ae60;--ah:#219a52;--dn:#e74c3c;--dh:#c0392b;--wn:#f39c12;--bg:#f0f2f5;--cb:#fff;--tx:#2c3e50;--tl:#7f8c8d;--bd:#dce1e6;--sh:0 2px 12px rgba(0,0,0,.08);--shh:0 4px 20px rgba(0,0,0,.12);--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.navbar{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 15px rgba(0,0,0,.2)}
+.nav-content{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.nav-brand{display:flex;align-items:center;gap:12px;padding:10px 0}
+.nav-brand img{height:44px}
+.nav-brand h1{font-size:1rem;font-weight:700}
+.nav-brand small{font-size:.65rem;opacity:.8;display:block}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{padding:14px 18px;cursor:pointer;border:none;background:0;color:rgba(255,255,255,.7);font-family:'Cairo',sans-serif;font-size:.82rem;font-weight:600;transition:.3s;border-bottom:3px solid transparent;display:flex;align-items:center;gap:6px}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,.1)}
+.nav-tab.active{color:#fff;border-bottom-color:var(--ac);background:rgba(255,255,255,.08)}
+.nav-tab svg{width:16px;height:16px}
+.main{max-width:1280px;margin:0 auto;padding:24px 20px}
+.page{display:none}.page.active{display:block}
+.card{background:var(--cb);border-radius:var(--r);box-shadow:var(--sh);padding:28px;margin-bottom:20px;border:1px solid var(--bd)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--bg)}
+.card-header h2{font-size:1.15rem;color:var(--p);display:flex;align-items:center;gap:10px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.form-group{margin-bottom:4px}.form-group.full{grid-column:1/-1}
+.form-group label{display:block;margin-bottom:5px;font-weight:600;font-size:.82rem;color:var(--tx)}
+.form-group label small{font-weight:400;color:var(--tl);margin-right:4px}
+input,select,textarea{width:100%;padding:9px 13px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:'Cairo',sans-serif;font-size:.88rem;transition:.3s;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pl);box-shadow:0 0 0 3px rgba(41,128,185,.15)}
+textarea{resize:vertical;min-height:65px}
+.btn{padding:9px 20px;border:none;border-radius:var(--rs);font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:.3s;display:inline-flex;align-items:center;gap:7px}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:var(--p);color:#fff}.btn-primary:hover{background:var(--pl);box-shadow:var(--shh)}
+.btn-accent{background:var(--ac);color:#fff}.btn-accent:hover{background:var(--ah);box-shadow:var(--shh)}
+.btn-danger{background:var(--dn);color:#fff}.btn-danger:hover{background:var(--dh)}
+.btn-warning{background:var(--wn);color:#fff}.btn-warning:hover{background:#e67e22}
+.btn-outline{background:0;color:var(--p);border:1.5px solid var(--p)}.btn-outline:hover{background:var(--p);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+table th{background:var(--bg);padding:11px 13px;font-size:.8rem;font-weight:700;color:var(--p);text-align:right;border-bottom:2px solid var(--bd)}
+table td{padding:9px 13px;font-size:.84rem;border-bottom:1px solid var(--bg);vertical-align:middle}
+table tr:hover{background:#f8f9fa}
+.tag{display:inline-block;padding:3px 11px;border-radius:20px;font-size:.73rem;font-weight:600}
+.tag-pending{background:#fef3cd;color:#856404}.tag-approved{background:#d4edda;color:#155724}
+.tag-partial{background:#ffeaa7;color:#d68910}.tag-cancelled{background:#fadbd8;color:#922b21}
+
+.tag-transfer{background:#d1ecf1;color:#0c5460}.tag-cheque{background:#e2d6f3;color:#4a2080}.tag-cash{background:#fff3cd;color:#856404}
+/* إصلاح 8: IBAN validation hints */
+.iban-hint{display:block;font-size:.75rem;margin-top:3px}.iban-hint.valid{color:var(--ac)}.iban-hint.invalid{color:var(--dn)}
+/* Phase 1: Validation error styles */
+.input-error{border-color:var(--dn)!important;box-shadow:0 0 0 3px rgba(231,76,60,.15)!important}
+.input-error-msg{display:block;font-size:.75rem;color:var(--dn);margin-top:3px;font-weight:600}
+/* إصلاح 7: ترقيم الصفحات / Fix 7: Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 0;flex-wrap:wrap;gap:10px;font-size:.84rem}
+.page-btn{padding:5px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);cursor:pointer;background:var(--cb);font-family:'Cairo';font-size:.82rem}
+.page-btn.active{background:var(--p);color:#fff;border-color:var(--p)}
+.page-btn:disabled{opacity:.4;cursor:default}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:var(--r);padding:18px;border:1px solid var(--bd);box-shadow:var(--sh);text-align:center}
+.stat-card .stat-num{font-size:1.8rem;font-weight:800;color:var(--p)}
+.stat-card .stat-label{font-size:.8rem;color:var(--tl);margin-top:3px}
+.line-items-table{margin:14px 0}
+.line-items-table th{background:var(--p);color:#fff;padding:9px;font-size:.78rem}
+.line-items-table td{padding:5px 7px}
+.payment-methods{display:flex;gap:10px;flex-wrap:wrap}
+.payment-method{padding:9px 16px;border:2px solid var(--bd);border-radius:var(--rs);cursor:pointer;transition:.3s;display:flex;align-items:center;gap:7px;font-weight:600;font-size:.82rem}
+.payment-method:hover{border-color:var(--pl)}.payment-method.selected{border-color:var(--p);background:rgba(26,82,118,.05);color:var(--p)}
+.payment-method input[type=radio]{display:none}
+.approvals-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:14px}
+.approval-card{border:2px solid var(--bd);border-radius:var(--r);padding:18px;text-align:center;transition:.3s}
+.approval-card.approved{border-color:var(--ac);background:rgba(39,174,96,.04)}
+.approval-card .approval-role{font-weight:700;color:var(--p);margin-bottom:3px;font-size:.85rem}
+.approval-card .approval-name{font-size:.8rem;color:var(--tl);margin-bottom:10px}
+.approval-card .approval-stamp{font-size:.73rem;color:var(--ac);font-weight:600;margin-top:7px}
+.amount-words{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 15px;font-size:.88rem;font-weight:600;color:var(--p);min-height:40px;display:flex;align-items:center}
+.print-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;overflow-y:auto;padding:20px}
+.print-overlay.show{display:flex;justify-content:center;align-items:flex-start}
+.print-doc{background:#fff;width:210mm;min-height:auto;padding:10mm 14mm;margin:20px auto;box-shadow:0 0 20px rgba(0,0,0,.3);position:relative;font-size:9pt;line-height:1.35}
+.pd-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:2.5px solid #1a5276;margin-bottom:6px}
+.pd-head img{height:42px}
+.pd-head-center{text-align:center;flex:1;margin:0 12px}
+.pd-head-center h2{color:#1a5276;font-size:13pt;margin:2px 0;letter-spacing:.5px}
+.pd-head-center h3{color:#1a5276;font-size:10.5pt;font-weight:600}
+.pd-head-left{text-align:left;font-size:7.5pt;color:#555;line-height:1.4}
+.pd-ref{display:flex;justify-content:space-between;padding:4px 0;font-size:8.5pt;margin-bottom:2px}
+.pd-ref span{font-weight:700;color:#1a5276}
+.pd-tbl{width:100%;border-collapse:collapse;margin:4px 0}
+.pd-tbl td{padding:4px 8px;border:1px solid #bbb;font-size:8.5pt;vertical-align:middle}
+.pd-tbl .lb{background:#eef3f7;font-weight:700;color:#1a5276;width:18%;font-size:7.8pt;line-height:1.3}
+.pd-tbl .lb small{display:block;color:#888;font-weight:400;font-size:7pt}
+.pd-tbl .val{font-weight:500}
+.pd-tbl .val-big{font-weight:800;font-size:10pt;color:#1a5276}
+.pd-tbl .val-mono{font-family:'Courier New',monospace;font-size:8.5pt;letter-spacing:.5px}
+.pd-dtl{width:100%;border-collapse:collapse;margin:4px 0}
+.pd-dtl th{background:#1a5276;color:#fff;padding:4px 8px;font-size:7.8pt;font-weight:600}
+.pd-dtl td{padding:4px 8px;border:1px solid #bbb;font-size:8.5pt}
+.pd-dtl .total-row{background:#eef3f7;font-weight:800;font-size:9pt}
+.pd-words{background:#f7f9fb;border:1px solid #d0d8e0;border-radius:4px;padding:5px 10px;font-size:8.5pt;font-weight:600;color:#1a5276;margin:4px 0}
+.pd-section{font-size:8pt;font-weight:700;color:#1a5276;border-bottom:1.5px solid #1a5276;padding-bottom:2px;margin:8px 0 4px;display:flex;justify-content:space-between}
+.pd-pay-badge{display:inline-block;background:#1a5276;color:#fff;padding:2px 10px;border-radius:10px;font-size:7.5pt;font-weight:600}
+.pd-req-box{display:flex;justify-content:space-between;align-items:center;border:1.5px solid #1a5276;border-radius:5px;padding:6px 12px;margin:6px 0;background:#f7f9fb}
+.pd-req-box .rq-info .rq-name{font-weight:700;font-size:9pt;color:#1a5276}
+.pd-req-box .rq-info .rq-pos{font-size:7.5pt;color:#888}
+.pd-req-box .rq-sig{text-align:center;min-width:140px}
+.pd-req-box .rq-sig .sl{border-top:1.5px solid #1a5276;width:120px;margin:6px auto 2px}
+.pd-req-box .rq-sig small{font-size:6.5pt;color:#888}
+.pd-sigs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+.pd-sig{text-align:center;border:1px solid #bbb;border-radius:5px;padding:6px 4px}
+.pd-sig.approved{border-color:#27ae60;background:rgba(39,174,96,.03)}
+.pd-sig .sr{font-weight:700;font-size:7.5pt;color:#1a5276;margin-bottom:1px}
+.pd-sig .sr small{display:block;font-weight:400;color:#888;font-size:6.5pt}
+.pd-sig .sn{font-size:7.5pt;margin-bottom:4px;color:#333}
+.pd-sig .ss{font-size:6.8pt;color:#27ae60;font-weight:600}
+.pd-sig .sl{border-top:1px solid #999;margin:6px auto 2px;width:75%}
+.pd-sig small{font-size:6pt;color:#888}
+.pd-footer{text-align:center;font-size:6.5pt;color:#aaa;margin-top:8px;padding-top:4px;border-top:1px solid #ddd}
+
+.pd-cancelled-stamp{position:absolute;top:40%;left:15%;font-size:60pt;color:rgba(200,0,0,0.12);font-weight:800;transform:rotate(-35deg);z-index:10;pointer-events:none;font-family:'Cairo',sans-serif;white-space:nowrap}
+.pd-cancel-info{border:2px dashed #e74c3c;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:8pt;color:#922b21}
+.pd-cancel-info strong{color:#e74c3c}
+
+.print-close{position:fixed;top:20px;left:20px;z-index:2001}
+.print-actions{position:fixed;top:20px;right:20px;z-index:2001;display:flex;gap:10px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:var(--r);padding:28px;width:92%;max-width:520px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.modal h3{margin-bottom:18px;color:var(--p)}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--p);color:#fff;padding:11px 22px;border-radius:var(--rs);font-weight:600;font-size:.88rem;z-index:5000;transition:.3s;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}.toast.success{background:var(--ac)}.toast.error{background:var(--dn)}
+.empty-state{text-align:center;padding:50px 20px;color:var(--tl)}
+.empty-state svg{width:56px;height:56px;margin-bottom:14px;opacity:.4}
+.empty-state p{font-size:.95rem;margin-bottom:14px}
+.ref-display{font-size:1.3rem;font-weight:800;color:var(--p);background:var(--bg);padding:7px 18px;border-radius:var(--rs);display:inline-block}
+.search-bar{position:relative;margin-bottom:14px}
+.search-bar input{padding-right:38px}
+.search-bar svg{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--tl)}
+.audit-entry{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--bg);align-items:flex-start}
+.audit-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.audit-icon.create{background:#d4edda;color:#155724}.audit-icon.approve{background:#cce5ff;color:#004085}
+.audit-icon.print{background:#fff3cd;color:#856404}.audit-icon.edit{background:#e2d6f3;color:#4a2080}
+.audit-icon.cancel{background:#fadbd8;color:#922b21}
+.audit-details{flex:1}
+.audit-details .audit-action{font-weight:600;font-size:.86rem}
+.audit-details .audit-meta{font-size:.76rem;color:var(--tl);margin-top:2px;display:flex;gap:14px;flex-wrap:wrap}
+.section-title{font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;font-size:.92rem;color:var(--p);border-right:3px solid var(--ac);padding-right:10px}
+.hr-section{margin:22px 0;border:none;border-top:2px solid var(--bg)}
+.bank-account-card{border:1px solid var(--bd);border-radius:var(--rs);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;transition:.3s;cursor:pointer}
+.bank-account-card:hover{border-color:var(--pl);background:rgba(41,128,185,.03)}
+.bank-account-card.selected{border-color:var(--p);background:rgba(26,82,118,.06)}
+.bank-account-card .ba-name{font-weight:700;font-size:.88rem}
+.bank-account-card .ba-num{font-size:.78rem;color:var(--tl);font-family:monospace;direction:ltr}
+@media print{
+body{background:#fff!important}
+body>*{display:none!important}
+.print-overlay{display:block!important;position:static!important;background:none!important;padding:0!important;overflow:visible!important}
+.print-overlay.show{display:block!important}
+.print-doc{width:100%!important;margin:0!important;padding:8mm 12mm!important;box-shadow:none!important;min-height:auto!important}
+.print-doc,.print-doc *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+.pd-tbl .lb{background:#eef3f7!important}
+.pd-dtl th{background:#1a5276!important;color:#fff!important}
+.pd-dtl .total-row{background:#eef3f7!important}
+.pd-words{background:#f7f9fb!important}
+.pd-req-box{background:#f7f9fb!important}
+.pd-sig.approved{background:rgba(39,174,96,.03)!important}
+.print-close,.print-actions{display:none!important}
+.navbar,.main{display:none!important}
+#reportOverlay.show{display:block!important;position:static!important;background:none!important;padding:0!important;overflow:visible!important}
+.report-doc{box-shadow:none!important;margin:0!important;padding:8mm 12mm!important}
+@page{size:A4;margin:0}
+}
+@media(max-width:768px){.nav-content{flex-direction:column;padding:10px}.nav-tabs{width:100%;overflow-x:auto}.nav-tab{padding:10px 12px;font-size:.75rem;white-space:nowrap}.form-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}.print-doc{width:100%;padding:10mm}.print-doc .signature-grid{grid-template-columns:1fr}.print-doc .requester-box{flex-direction:column;gap:10px}}
+/* ═══ المبادرات CSS / Initiatives CSS ═══ */
+.initiative-card{background:var(--cb);border-radius:var(--r);box-shadow:var(--sh);padding:20px;margin-bottom:16px;border:1px solid var(--bd);transition:.3s}
+.initiative-card:hover{box-shadow:var(--shh);border-color:var(--pl)}
+.initiative-card .init-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.initiative-card .init-name{font-size:1.1rem;font-weight:800;color:var(--p)}
+.initiative-card .init-donor{font-size:.82rem;color:var(--tl);margin-top:2px}
+.initiative-card .init-dates{font-size:.78rem;color:var(--tl);margin:6px 0}
+.tag-draft{background:#fef3cd;color:#856404}
+.tag-active{background:#d4edda;color:#155724}
+.tag-closed{background:#d6d8db;color:#383d41}
+.progress-bar-wrap{background:#e9ecef;border-radius:20px;height:22px;overflow:hidden;margin:10px 0;position:relative}
+.progress-bar-fill{height:100%;border-radius:20px;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;min-width:30px}
+.progress-green{background:linear-gradient(90deg,#27ae60,#2ecc71)}
+.progress-yellow{background:linear-gradient(90deg,#f39c12,#f1c40f)}
+.progress-orange{background:linear-gradient(90deg,#e67e22,#f39c12)}
+.progress-red{background:linear-gradient(90deg,#e74c3c,#c0392b)}
+.init-stats{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0;font-size:.82rem}
+.init-stats span{display:flex;align-items:center;gap:4px}
+.init-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.budget-info-bar{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 14px;margin:10px 0;font-size:.85rem}
+.budget-info-bar.warning{background:#fff3cd;border-color:#ffc107;color:#856404}
+.budget-info-bar.danger{background:#f8d7da;border-color:#f5c6cb;color:#721c24}
+.modal-lg{max-width:780px!important}
+.budget-items-list{margin:12px 0}
+.budget-item-row{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--bg)}
+.budget-item-row input[type=checkbox]{width:18px;height:18px;cursor:pointer}
+.budget-item-row .item-name-input{flex:1}
+.budget-item-row .item-budget-input{width:140px}
+.budget-totals{background:var(--bg);border-radius:var(--rs);padding:14px;margin-top:14px}
+.budget-totals .total-row{display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem}
+.budget-totals .total-row.grand{font-weight:800;font-size:1rem;color:var(--p);border-top:2px solid var(--bd);padding-top:8px;margin-top:6px}
+.detail-table th{background:var(--p);color:#fff;padding:9px;font-size:.78rem}
+.detail-table td{padding:7px 9px;font-size:.84rem;border-bottom:1px solid var(--bg)}
+.alert-section{margin-top:20px}
+.alert-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--rs);margin-bottom:8px;font-size:.84rem}
+.alert-item.alert-red{background:#f8d7da;border:1px solid #f5c6cb;color:#721c24}
+.alert-item.alert-orange{background:#ffeaa7;border:1px solid #fdcb6e;color:#d68910}
+.alert-item.alert-yellow{background:#fef3cd;border:1px solid #ffc107;color:#856404}
+.radio-group{display:flex;gap:16px;margin:8px 0;flex-wrap:wrap}
+.radio-group label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.85rem;font-weight:600}
+.amendment-log{margin-top:16px}
+/* تقرير المبادرة / Initiative Report */
+.report-doc{background:#fff;width:210mm;min-height:auto;padding:12mm 16mm;margin:20px auto;box-shadow:0 0 20px rgba(0,0,0,.3);font-size:9.5pt;line-height:1.5;direction:rtl}
+.report-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:3px solid var(--p);margin-bottom:14px}
+.report-header img{height:48px}
+.report-header-center{text-align:center;flex:1;margin:0 16px}
+.report-header-center h2{color:var(--p);font-size:14pt;margin:2px 0}
+.report-header-center h3{color:var(--p);font-size:10pt;font-weight:600}
+.report-title{text-align:center;margin:16px 0;padding:12px;background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;border-radius:var(--rs);font-size:16pt;font-weight:800}
+.report-section{font-size:10pt;font-weight:700;color:var(--p);border-bottom:2px solid var(--p);padding-bottom:4px;margin:16px 0 8px}
+.report-table{width:100%;border-collapse:collapse;margin:8px 0}
+.report-table th{background:var(--p);color:#fff;padding:6px 10px;font-size:8.5pt;text-align:right}
+.report-table td{padding:6px 10px;border:1px solid #ccc;font-size:9pt}
+.report-table tr:nth-child(even){background:#f8f9fb}
+.report-table .total-row{background:#eef3f7;font-weight:800}
+.report-table .grand-total{background:var(--p);color:#fff;font-weight:800;font-size:10pt}
+.report-surplus{color:#27ae60;font-weight:800}.report-deficit{color:#e74c3c;font-weight:800}
+.report-chart-area{margin:16px 0;page-break-inside:avoid}
+.report-charts-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin:12px 0}
+.report-footer{text-align:center;font-size:7pt;color:#999;margin-top:16px;padding-top:8px;border-top:1px solid #ddd}
+.report-info-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:8px 0}
+.report-info-card{background:#f8f9fb;border:1px solid var(--bd);border-radius:var(--rs);padding:8px 12px;text-align:center}
+.report-info-card .label{font-size:7.5pt;color:var(--tl)}
+.report-info-card .value{font-size:10pt;font-weight:700;color:var(--p)}
+@media print{
+.report-doc{box-shadow:none!important;margin:0!important;padding:8mm 12mm!important}
+.report-doc,.report-doc *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+.report-table th{background:var(--p)!important;color:#fff!important}
+.report-table .grand-total{background:var(--p)!important;color:#fff!important}
+.report-title{background:linear-gradient(135deg,var(--pd),var(--p))!important;color:#fff!important}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<nav class="navbar"><div class="nav-content">
+<div class="nav-brand">
+<img src="data:image/jpeg;base64,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" alt="شعار الجمعية" id="logoImg">
+<div><h1>نظام أوامر الصرف</h1><small>Payment Approval System</small></div>
+</div>
+<div class="nav-tabs">
+<button class="nav-tab active" onclick="showPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>الرئيسية</button>
+<button class="nav-tab" onclick="showPage('beneficiaries')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>المستفيدين</button>
+<button class="nav-tab" onclick="showPage('accounts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>الحسابات البنكية</button>
+<button class="nav-tab" onclick="showPage('initiatives')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8l3 3-3 3-3-3z"/><line x1="12" y1="2" x2="12" y2="6"/></svg>المبادرات</button>
+<button class="nav-tab" onclick="showPage('neworder')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>أمر صرف جديد</button>
+<button class="nav-tab" onclick="showPage('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>سجل الأوامر</button>
+<button class="nav-tab" onclick="showPage('audit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>سجل النشاط</button>
+</div>
+</div></nav>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+<div class="stats-grid" id="statsGrid"></div>
+<div class="card"><div class="card-header"><h2>آخر أوامر الصرف</h2></div><div class="table-wrap" id="recentOrdersTable"></div></div>
+</div>
+
+<!-- BENEFICIARIES -->
+<div id="page-beneficiaries" class="page">
+<div class="card"><div class="card-header"><h2>إدارة المستفيدين / Beneficiaries</h2>
+<button class="btn btn-accent" onclick="showBenModal()">+ إضافة مستفيد</button></div>
+<div class="search-bar"><input type="text" id="searchBen" placeholder="بحث عن مستفيد..." oninput="renderBen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+<div class="table-wrap" id="benTable"></div></div>
+</div>
+
+<!-- BANK ACCOUNTS -->
+<div id="page-accounts" class="page">
+<div class="card"><div class="card-header"><h2>الحسابات البنكية للجمعية / Association Bank Accounts</h2>
+<button class="btn btn-accent" onclick="showAccModal()">+ إضافة حساب</button></div>
+<div class="table-wrap" id="accTable"></div></div>
+</div>
+
+<!-- INITIATIVES / المبادرات -->
+<div id="page-initiatives" class="page">
+<div class="card">
+<div class="card-header">
+<h2>إدارة المبادرات / Initiatives Management</h2>
+<button class="btn btn-accent" onclick="showInitModal()">+ إضافة مبادرة / New Initiative</button>
+</div>
+<div class="search-bar"><input type="text" id="searchInit" placeholder="بحث بالاسم أو المتبرع..." oninput="renderInitiatives()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+<div id="initiativesList"></div>
+</div>
+</div>
+
+<!-- INITIATIVE DETAILS / تفاصيل بنود المبادرة -->
+<div id="page-init-details" class="page">
+<div class="card">
+<div class="card-header">
+<h2 id="initDetailTitle">تفاصيل بنود المبادرة</h2>
+<div class="btn-group">
+<button class="btn btn-primary btn-sm" onclick="showAmendmentModal()">🔄 مناقلة / Budget Amendment</button>
+<button class="btn btn-accent btn-sm" onclick="exportInitExcel()">📥 تصدير Excel</button>
+<button class="btn btn-warning btn-sm" onclick="showInitReport(currentInitId)">📈 تقرير المبادرة</button>
+<button class="btn btn-outline btn-sm" onclick="showPage('initiatives')">↩️ رجوع للقائمة</button>
+</div>
+</div>
+<div id="initDetailContent"></div>
+<div id="amendmentLog"></div>
+</div>
+</div>
+
+<!-- NEW ORDER -->
+<div id="page-neworder" class="page">
+<div class="card">
+<div class="card-header"><h2 id="formTitle">نموذج إعتماد صرف جديد / New Payment Approval</h2><div class="ref-display" id="refNumber"></div></div>
+
+<div class="form-grid">
+<div class="form-group"><label>التاريخ <small>Date</small></label><input type="date" id="orderDate"></div>
+<div class="form-group"><label>إسم الحساب <small>Account Name</small></label><input value="جمعية المسؤولية الاجتماعية بمحافظة جدة" readonly style="background:#f8f9fa"></div>
+</div>
+
+<hr class="hr-section">
+<div class="section-title">حساب الجمعية البنكي <small>Source Bank Account</small></div>
+<div id="sourceAccountsList"></div>
+
+<hr class="hr-section">
+<div class="form-group full"><label>وصف مختصر الاحتياج <small>Brief description for requirement</small></label><textarea id="orderDesc" placeholder="مثال: استعاضة العهدة المستديمة رقم (1)"></textarea></div>
+
+<hr class="hr-section">
+<div class="section-title">المبادرة والبند <small>Initiative & Budget Item</small></div>
+<div class="form-grid">
+<div class="form-group"><label>المبادرة <small>Initiative</small></label><select id="orderInitiative" onchange="onInitiativeChange()"><option value="">— بدون مبادرة —</option></select></div>
+<div class="form-group"><label>البند <small>Budget Item</small></label><select id="orderBudgetItem" onchange="onBudgetItemChange()"><option value="">— اختر البند —</option></select></div>
+</div>
+<div id="budgetItemInfo"></div>
+
+<label class="section-title" style="margin-top:14px">تفاصيل البنود <small>Line Items</small></label>
+<div class="line-items-table"><table><thead><tr><th style="width:5%">#</th><th>التفاصيل / Details</th><th style="width:22%">المبلغ / Amount (ريال)</th><th style="width:7%"></th></tr></thead>
+<tbody id="lineItemsBody"><tr><td>1</td><td><input type="text" class="line-desc" placeholder="وصف البند"></td><td><input type="number" class="line-amount" step="0.01" min="0" placeholder="0.00" oninput="calcTotal()"></td><td><button class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button></td></tr></tbody>
+<tfoot><tr><td colspan="2" style="text-align:left"><button class="btn btn-outline btn-sm" onclick="addLine()">+ إضافة بند</button></td><td style="font-weight:800;font-size:1.1rem;color:var(--p)" id="totalAmount">0.00</td><td></td></tr></tfoot></table></div>
+
+<div class="form-group" style="margin-top:10px"><label>المبلغ بالحروف <small>In Words</small></label><div class="amount-words" id="amountWords">—</div></div>
+
+<hr class="hr-section">
+<div class="section-title">بيانات الطالب <small>Requester Info</small></div>
+<div class="form-grid">
+<div class="form-group"><label>مطلوب بواسطة <small>Requested by</small></label><input type="text" id="requestedBy" value="هبه محمد بخاري"></div>
+<div class="form-group"><label>الوظيفة / الصفة <small>Position</small></label><input type="text" id="requesterPosition" value="الرئيس التنفيذي"></div>
+</div>
+
+<hr class="hr-section">
+<div class="section-title">طريقة الدفع <small>Payment Method</small></div>
+<div class="payment-methods" id="paymentMethods">
+<div class="payment-method selected" onclick="selectPayment(this,'bank_transfer')"><input type="radio" name="payment" value="bank_transfer" checked>🏦 تحويل بنكي</div>
+<div class="payment-method" onclick="selectPayment(this,'cheque')"><input type="radio" name="payment" value="cheque">📝 شيك</div>
+<div class="payment-method" onclick="selectPayment(this,'cash')"><input type="radio" name="payment" value="cash">💵 نقدي</div>
+</div>
+<div id="chequeFields" style="display:none;margin-top:14px"><div class="form-grid"><div class="form-group"><label>رقم الشيك</label><input type="text" id="chequeNo"></div><div class="form-group"><label>تاريخ الشيك</label><input type="date" id="chequeDate"></div></div></div>
+
+<hr class="hr-section">
+<div class="section-title">بيانات المستفيد <small>Beneficiary Info</small></div>
+<div class="form-grid">
+<div class="form-group"><label>اختر المستفيد</label><select id="selectBen" onchange="fillBen()"><option value="">— اختر من القائمة —</option></select></div>
+<div class="form-group"><label>إسم المستفيد</label><input type="text" id="benName"></div>
+<div class="form-group"><label>رقم حساب المستفيد / IBAN</label><input type="text" id="benAccount" oninput="validateIBAN(this)"></div>
+<div class="form-group"><label>بنك المستفيد</label><input type="text" id="benBank"></div>
+</div>
+
+<hr class="hr-section">
+<div class="section-title">المعتمدين <small>Approvers</small></div>
+<div class="form-grid">
+<div class="form-group"><label>المُعِد / المدير المالي</label><input type="text" id="preparedBy" value="محمد إبراهيم مصطفى"></div>
+<div class="form-group"><label>المعتمد الأول</label><input type="text" id="approver1" value="دليم بن سلمان آل ناشر"></div>
+<div class="form-group"><label>المعتمد الثاني</label><input type="text" id="approver2" value="امل بنت عبدالرحمن خان"></div>
+</div>
+
+<div style="margin-top:26px" class="btn-group">
+<div id="formButtons"><button class="btn btn-accent" onclick="saveOrder()">💾 حفظ أمر الصرف</button>
+<button class="btn btn-primary" onclick="saveAndPreview()">🖨️ حفظ ومعاينة الطباعة</button></div>
+</div>
+</div></div>
+
+<!-- ORDERS -->
+<div id="page-orders" class="page">
+<div class="card"><div class="card-header"><h2>سجل أوامر الصرف</h2><button class="btn btn-accent btn-sm" onclick="exportOrdersExcel()">📊 تصدير Excel</button></div>
+<div style="margin-bottom:10px;display:flex;align-items:center;gap:20px;flex-wrap:wrap"><div class="search-bar" style="flex:1;margin-bottom:0"><input type="text" id="searchOrders" placeholder="بحث برقم المرجع أو المستفيد..." oninput="renderOrders()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><label style="font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px"><input type="checkbox" id="showCancelled" onchange="renderOrders()"> إظهار الملغاة / Show Cancelled</label></div>
+<!-- إصلاح 7: صف الفلاتر / Fix 7: Filter row -->
+<div class="form-grid" style="margin-bottom:10px;gap:10px">
+<div class="form-group" style="margin-bottom:0"><label style="font-size:.75rem">الحالة / Status</label><select id="filterStatus" onchange="currentPage=1;renderOrders()"><option value="">الكل / All</option><option value="pending">جديد / Pending</option><option value="partial">قيد الاعتماد / Partial</option><option value="approved">معتمد / Approved</option><option value="cancelled">ملغي / Cancelled</option></select></div>
+<div class="form-group" style="margin-bottom:0"><label style="font-size:.75rem">من / From</label><input type="date" id="filterDateFrom" onchange="currentPage=1;renderOrders()"></div>
+<div class="form-group" style="margin-bottom:0"><label style="font-size:.75rem">إلى / To</label><input type="date" id="filterDateTo" onchange="currentPage=1;renderOrders()"></div>
+<div class="form-group" style="margin-bottom:0"><label style="font-size:.75rem">المستفيد / Beneficiary</label><select id="filterBeneficiary" onchange="currentPage=1;renderOrders()"><option value="">الكل / All</option></select></div>
+<div class="form-group" style="margin-bottom:0"><label style="font-size:.75rem">المبادرة / Initiative</label><select id="filterInitiative" onchange="currentPage=1;renderOrders()"><option value="">الكل / All</option></select></div>
+<div class="form-group" style="margin-bottom:0;display:flex;align-items:flex-end"><button class="btn btn-outline btn-sm" onclick="clearOrderFilters()">مسح الفلاتر / Clear</button></div>
+</div>
+<div class="table-wrap" id="ordersTable"></div>
+<!-- إصلاح 7: ترقيم الصفحات / Fix 7: Pagination -->
+<div class="pagination" id="ordersPagination"></div>
+</div>
+</div>
+
+<!-- AUDIT -->
+<div id="page-audit" class="page">
+<div class="card"><div class="card-header"><h2>سجل النشاط / Audit Trail</h2><button class="btn btn-outline btn-sm" onclick="clearAudit()">مسح السجل</button></div><div id="auditList"></div></div>
+
+<!-- إصلاح 1: النسخ الاحتياطي / Fix 1: Backup & Restore -->
+<div class="card">
+<div class="card-header"><h2>💾 النسخ الاحتياطي / Backup & Restore</h2></div>
+<div class="btn-group" style="margin-bottom:14px">
+<button class="btn btn-accent" onclick="exportBackup()">📥 تصدير نسخة احتياطية / Export Backup</button>
+<button class="btn btn-warning" onclick="importBackup()">📂 استعادة من ملف / Restore from File</button>
+</div>
+<div id="lastBackupInfo" style="font-size:.82rem;color:var(--tl)"></div>
+<input type="file" id="restoreFileInput" accept=".json" style="display:none" onchange="handleRestoreFile(this)">
+</div>
+
+</div>
+</div>
+
+<!-- Beneficiary Modal -->
+<div class="modal-overlay" id="benModal"><div class="modal"><h3 id="benModalTitle">إضافة مستفيد جديد</h3><input type="hidden" id="editBenId">
+<div class="form-group"><label>إسم المستفيد</label><input type="text" id="mBenName" placeholder="الاسم الكامل"></div>
+<div class="form-group"><label>رقم الحساب / IBAN</label><input type="text" id="mBenAcc" placeholder="SA..." oninput="validateIBAN(this)"></div>
+<div class="form-group"><label>إسم البنك</label><select id="mBenBank" onchange="document.getElementById('otherBG').style.display=this.value==='أخرى'?'block':'none'"><option value="">— اختر —</option><option>مصرف الإنماء</option><option>مصرف الراجحي</option><option>البنك الأهلي</option><option>بنك الرياض</option><option>البنك السعودي الفرنسي</option><option>ساب</option><option>بنك البلاد</option><option>بنك الجزيرة</option><option>البنك العربي الوطني</option><option>بنك الاستثمار</option><option>أخرى</option></select></div>
+<div class="form-group" id="otherBG" style="display:none"><label>اسم البنك الآخر</label><input type="text" id="mBenBankO"></div>
+<div class="btn-group" style="margin-top:18px;justify-content:flex-end"><button class="btn btn-outline" onclick="closeBenModal()">إلغاء</button><button class="btn btn-accent" onclick="saveBen()">حفظ</button></div></div></div>
+
+<!-- Account Modal -->
+<div class="modal-overlay" id="accModal"><div class="modal"><h3 id="accModalTitle">إضافة حساب بنكي</h3><input type="hidden" id="editAccId">
+<div class="form-group"><label>إسم البنك</label><input type="text" id="mAccBank" placeholder="مثال: مصرف الإنماء"></div>
+<div class="form-group"><label>رقم الحساب</label><input type="text" id="mAccNum" placeholder="رقم الحساب"></div>
+<div class="form-group"><label>IBAN</label><input type="text" id="mAccIBAN" placeholder="SA..." oninput="validateIBAN(this)"></div>
+<div class="btn-group" style="margin-top:18px;justify-content:flex-end"><button class="btn btn-outline" onclick="closeAccModal()">إلغاء</button><button class="btn btn-accent" onclick="saveAcc()">حفظ</button></div></div></div>
+
+<!-- Print Overlay -->
+<div class="print-overlay" id="printOverlay">
+<div class="print-close"><button class="btn btn-danger" onclick="closePrint()">✕ إغلاق</button></div>
+<div class="print-actions"><button class="btn btn-accent" onclick="window.print()">🖨️ طباعة / PDF</button></div>
+<div class="print-doc" id="printDoc"></div>
+</div>
+
+
+<!-- Cancel Order Modal / نافذة إلغاء أمر الصرف -->
+<div class="modal-overlay" id="cancelModal"><div class="modal" style="max-width:480px">
+<h3 style="color:var(--dn)">⚠️ إلغاء أمر صرف معتمد<br><small style="font-weight:400;font-size:.8rem">Cancel Approved Payment Order</small></h3>
+<div id="cancelModalInfo" style="margin:14px 0;padding:10px;background:var(--bg);border-radius:var(--rs);font-size:.88rem"></div>
+<div class="form-group"><label>سبب الإلغاء / Cancellation Reason: <span style="color:var(--dn)">*</span></label>
+<textarea id="cancelReason" placeholder="أدخل سبب الإلغاء (5 أحرف على الأقل)..." style="min-height:80px"></textarea></div>
+<p style="font-size:.78rem;color:var(--dn);margin:10px 0">⚠️ هذا الإجراء نهائي ولا يمكن التراجع عنه. الأمر سيبقى في السجل كـ "ملغي"</p>
+<input type="hidden" id="cancelOrderId">
+<div class="btn-group" style="margin-top:14px;justify-content:flex-end">
+<button class="btn btn-outline" onclick="closeCancelModal()">رجوع / Back</button>
+<button class="btn btn-danger" onclick="confirmCancel()">تأكيد الإلغاء / Confirm</button>
+</div></div></div>
+
+<!-- إصلاح 1: نافذة تأكيد الاستعادة / Fix 1: Restore Confirmation Modal -->
+<div class="modal-overlay" id="restoreModal"><div class="modal" style="max-width:480px">
+<h3 style="color:var(--wn)">📂 استعادة نسخة احتياطية<br><small style="font-weight:400;font-size:.8rem">Restore Backup</small></h3>
+<div id="restoreModalInfo" style="margin:14px 0;padding:10px;background:var(--bg);border-radius:var(--rs);font-size:.88rem"></div>
+<p style="font-size:.78rem;color:var(--dn);margin:10px 0">⚠️ سيتم استبدال جميع البيانات الحالية! لا يمكن التراجع. / All current data will be replaced! This cannot be undone.</p>
+<div class="btn-group" style="margin-top:14px;justify-content:flex-end">
+<button class="btn btn-outline" onclick="closeRestoreModal()">↩️ إلغاء / Cancel</button>
+<button class="btn btn-accent" onclick="confirmRestore()">✅ تأكيد الاستعادة / Confirm Restore</button>
+</div></div></div>
+
+<!-- Compare Changes Modal / نافذة مقارنة التعديلات -->
+<div class="modal-overlay" id="compareModal"><div class="modal" style="max-width:600px">
+<h3>📋 مراجعة التعديلات / Review Changes</h3>
+<div id="compareContent" style="margin:14px 0"></div>
+<div class="btn-group" style="margin-top:14px;justify-content:flex-end">
+<button class="btn btn-outline" onclick="closeCompareModal()">↩️ رجوع / Back</button>
+<button class="btn btn-accent" onclick="confirmEdit()">✅ تأكيد التعديل / Confirm</button>
+</div></div></div>
+
+<!-- Initiative Modal / نافذة إنشاء/تعديل مبادرة -->
+<div class="modal-overlay" id="initModal"><div class="modal modal-lg" style="max-height:90vh;overflow-y:auto">
+<h3 id="initModalTitle">إضافة مبادرة جديدة / New Initiative</h3>
+<input type="hidden" id="editInitId">
+<div class="form-grid">
+<div class="form-group"><label>اسم المبادرة <small>Initiative Name</small></label><input type="text" id="mInitName" placeholder="مثال: مبادرة إفطار صائم"></div>
+<div class="form-group"><label>اسم المتبرع <small>Donor Name</small></label><input type="text" id="mInitDonor" placeholder="مثال: شركة ABC"></div>
+<div class="form-group"><label>تاريخ البداية <small>Start Date</small></label><input type="date" id="mInitStart"></div>
+<div class="form-group"><label>تاريخ النهاية <small>End Date</small></label><input type="date" id="mInitEnd"></div>
+<div class="form-group"><label>الحالة <small>Status</small></label><select id="mInitStatus"><option value="draft">مسودة / Draft</option><option value="active">نشطة / Active</option><option value="closed">مغلقة / Closed</option></select></div>
+<div class="form-group full"><label>ملاحظات <small>Notes</small></label><textarea id="mInitNotes" placeholder="ملاحظات اختيارية..."></textarea></div>
+</div>
+<hr class="hr-section">
+<div class="section-title">النسبة التشغيلية <small>Operating Margin</small></div>
+<div class="radio-group">
+<label><input type="radio" name="opType" value="percentage" checked onchange="updateOpCalc()"> نسبة مئوية / Percentage</label>
+<label><input type="radio" name="opType" value="fixed" onchange="updateOpCalc()"> مبلغ محدد / Fixed Amount</label>
+</div>
+<div class="form-grid">
+<div class="form-group" id="opPercentGroup"><label>النسبة % <small>Percentage</small></label><div style="display:flex;align-items:center;gap:8px"><input type="number" id="mOpPercent" step="0.1" min="0" max="100" value="8" oninput="updateOpCalc()" style="width:100px"> <span id="opCalcResult" style="font-size:.85rem;color:var(--p);font-weight:600"></span></div></div>
+<div class="form-group" id="opFixedGroup" style="display:none"><label>المبلغ <small>Amount (SAR)</small></label><input type="number" id="mOpFixed" step="0.01" min="0" oninput="updateOpCalc()"></div>
+</div>
+<hr class="hr-section">
+<div class="section-title">بنود الموازنة <small>Budget Items</small></div>
+<div id="budgetItemsContainer"></div>
+<button class="btn btn-outline btn-sm" onclick="addCustomBudgetItem()" style="margin-top:8px">+ إضافة بند / Add Item</button>
+<div class="budget-totals" id="budgetTotals"></div>
+<div class="btn-group" style="margin-top:18px;justify-content:flex-end">
+<button class="btn btn-outline" onclick="closeInitModal()">↩️ إلغاء / Cancel</button>
+<button class="btn btn-accent" onclick="saveInitiative()">💾 حفظ المبادرة / Save</button>
+</div>
+</div></div>
+
+<!-- Amendment Modal / نافذة المناقلات -->
+<div class="modal-overlay" id="amendmentModal"><div class="modal" style="max-width:550px">
+<h3>🔄 مناقلة موازنة / Budget Amendment</h3>
+<div class="radio-group" style="margin-bottom:12px">
+<label><input type="radio" name="amendType" value="transfer" checked onchange="updateAmendFields()"> مناقلة داخلية / Transfer</label>
+<label><input type="radio" name="amendType" value="increase" onchange="updateAmendFields()"> زيادة / Increase</label>
+<label><input type="radio" name="amendType" value="decrease" onchange="updateAmendFields()"> تخفيض / Decrease</label>
+</div>
+<div id="amendTransferFields">
+<div class="form-group"><label>من بند <small>From Item</small></label><select id="amendFrom"></select></div>
+<div class="form-group"><label>إلى بند <small>To Item</small></label><select id="amendTo"></select></div>
+</div>
+<div id="amendSingleField" style="display:none">
+<div class="form-group"><label>البند <small>Budget Item</small></label><select id="amendItem"></select></div>
+</div>
+<div class="form-group"><label>المبلغ <small>Amount (SAR)</small></label><input type="number" id="amendAmount" step="0.01" min="0"></div>
+<div class="form-group"><label>السبب <small>Reason</small> <span style="color:var(--dn)">*</span></label><textarea id="amendReason" placeholder="أدخل سبب المناقلة (5 أحرف على الأقل)..."></textarea></div>
+<div class="btn-group" style="margin-top:14px;justify-content:flex-end">
+<button class="btn btn-outline" onclick="closeAmendmentModal()">↩️ إلغاء / Cancel</button>
+<button class="btn btn-accent" onclick="executeAmendment()">✅ تنفيذ / Execute</button>
+</div>
+</div></div>
+
+<!-- Initiative Report Overlay / تقرير المبادرة -->
+<div class="print-overlay" id="reportOverlay">
+<div class="print-close"><button class="btn btn-danger" onclick="closeReport()">✕ إغلاق</button></div>
+<div class="print-actions"><button class="btn btn-accent" onclick="printReport()">🖨️ طباعة / Print</button></div>
+<div class="report-doc" id="reportDoc"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// تهريب HTML لمنع XSS / HTML escape to prevent XSS
+function esc(s){if(s===null||s===undefined)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+// Modal تأكيد موحّد / Unified confirm modal
+let _confirmResolve=null;
+function askConfirm(title,message,confirmLabel='تأكيد / Confirm',danger=true){return new Promise(resolve=>{document.getElementById('confirmTitle').textContent=title;document.getElementById('confirmMessage').textContent=message;const btn=document.getElementById('confirmYesBtn');btn.textContent=confirmLabel;btn.className='btn '+(danger?'btn-danger':'btn-accent');document.getElementById('confirmModal').classList.add('show');_confirmResolve=(val)=>{document.getElementById('confirmModal').classList.remove('show');resolve(val);_confirmResolve=null}})}
+const LOGO='data:image/jpeg;base64,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';
+const K={b:'pas_ben',o:'pas_orders',a:'pas_audit',c:'pas_counter',ac:'pas_accounts',p:'pas_projects'};
+// إصلاح 10: معالجة أخطاء التخزين / Fix 10: localStorage error handling
+const gD=k=>{try{const data=localStorage.getItem(k);return data?JSON.parse(data):[]}catch(e){console.error('Read error:',e);toast('⚠️ خطأ في قراءة البيانات / Error reading data','error');return[]}};
+const sD=(k,d)=>{try{localStorage.setItem(k,JSON.stringify(d))}catch(e){if(e.name==='QuotaExceededError'||e.code===22){toast('⚠️ مساحة التخزين ممتلئة! الرجاء أخذ نسخة احتياطية ومسح البيانات القديمة / Storage full!','error')}else{toast('⚠️ خطأ في حفظ البيانات / Error saving data','error')}console.error('Storage error:',e)}};
+// متغير عام لوضع التعديل / Global edit mode variable
+let editingOrderId = null;
+
+// حساب حالة أمر الصرف تلقائياً / Compute order status automatically
+function getStatus(o){
+  if(o.cancelledAt) return 'cancelled';
+  const a=o.approvals||{};
+  if(a.prepared&&a.approver1&&a.approver2) return 'approved';
+  if(a.prepared||a.approver1||a.approver2) return 'partial';
+  return 'pending';
+}
+
+const gC=()=>{const y=new Date().getFullYear().toString().slice(-2);let c=JSON.parse(localStorage.getItem(K.c)||'{}');if(c.year!==y)c={year:y,num:0};return c};
+const nextRef=()=>{let c=gC();c.num++;sD(K.c,c);return`${c.year} - ${String(c.num).padStart(3,'0')}`};
+const peekRef=()=>{let c=gC();return`${c.year} - ${String(c.num+1).padStart(3,'0')}`};
+
+// إصلاح 3: IP ثابت بدل عشوائي / Fix 3: Static IP instead of random
+function addAudit(action,details,type='create'){const l=gD(K.a);l.unshift({id:Date.now(),action,details,type,timestamp:new Date().toISOString(),ip:'Local System',user:'محمد إبراهيم مصطفى'});sD(K.a,l)}
+
+// إصلاح 8: تحقق IBAN سعودي / Fix 8: Saudi IBAN validation (warning only)
+function validateIBAN(input){const val=input.value.replace(/\s/g,'');input.value=val;const next=input.nextElementSibling;if(next&&next.classList.contains('iban-hint'))next.remove();if(val.toUpperCase().startsWith('SA')){const hint=document.createElement('small');hint.className='iban-hint';if(val.length===24&&/^SA\d{22}$/i.test(val)){hint.classList.add('valid');hint.textContent='✅ IBAN سعودي صحيح / Valid Saudi IBAN'}else{hint.classList.add('invalid');hint.textContent='❌ IBAN غير مكتمل (يجب 24 خانة) / Invalid IBAN'}input.parentNode.insertBefore(hint,input.nextSibling)}}
+
+function fmt(n){return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+function tafqeet(num){
+if(!num||num===0)return'';
+const ones=['','واحد','اثنان','ثلاثة','أربعة','خمسة','ستة','سبعة','ثمانية','تسعة','عشرة','أحد عشر','اثنا عشر','ثلاثة عشر','أربعة عشر','خمسة عشر','ستة عشر','سبعة عشر','ثمانية عشر','تسعة عشر'];
+const tens=['','','عشرون','ثلاثون','أربعون','خمسون','ستون','سبعون','ثمانون','تسعون'];
+const hundreds=['','مائة','مائتان','ثلاثمائة','أربعمائة','خمسمائة','ستمائة','سبعمائة','ثمانمائة','تسعمائة'];
+num=parseFloat(num);const r=Math.floor(num);const h=Math.round((num-r)*100);
+function cv(n){if(n===0)return'';if(n<20)return ones[n];if(n<100){const t=Math.floor(n/10),o=n%10;return o?ones[o]+' و'+tens[t]:tens[t]}if(n<100){return''}if(n<1000){const hd=Math.floor(n/100),rest=n%100;return rest?hundreds[hd]+' و'+cv(rest):hundreds[hd]}if(n<1000000){const th=Math.floor(n/1000),rest=n%1000;let t;if(th===1)t='ألف';else if(th===2)t='ألفان';else if(th>=3&&th<=10)t=cv(th)+' آلاف';else t=cv(th)+' ألف';return rest?t+' و'+cv(rest):t}if(n<1000000000){const m=Math.floor(n/1000000),rest=n%1000000;let t;if(m===1)t='مليون';else if(m===2)t='مليونان';else if(m>=3&&m<=10)t=cv(m)+' ملايين';else t=cv(m)+' مليون';return rest?t+' و'+cv(rest):t}return n.toLocaleString('ar-SA')}
+let result='فقط '+cv(r)+' ريالاً سعودياً';if(h>0)result+=' و'+cv(h)+' هللة';result+=' لا غير';return result}
+
+// حماية التنقل أثناء التعديل / Navigation protection during edit
+async function showPage(n){if(editingOrderId!==null&&n!=='neworder'){if(!await askConfirm('مغادرة التعديل / Leave Edit','هل تريد مغادرة التعديل بدون حفظ؟ / Leave edit mode without saving?'))return;cancelEditing()}document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));const pageId=n==='init-details'?'page-init-details':'page-'+n;document.getElementById(pageId).classList.add('active');const tabMap=['dashboard','beneficiaries','accounts','initiatives','neworder','orders','audit'];const idx=tabMap.indexOf(n==='init-details'?'initiatives':n);if(idx>=0)document.querySelectorAll('.nav-tab')[idx].classList.add('active');if(n==='dashboard')renderDashboard();if(n==='beneficiaries')renderBen();if(n==='accounts')renderAcc();if(n==='initiatives')renderInitiatives();if(n==='neworder')initNewOrder();if(n==='orders')renderOrders();if(n==='audit')renderAudit()}
+
+function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;setTimeout(()=>e.className='toast',3000)}
+
+// BANK ACCOUNTS
+function initDefaultAccounts(){const a=gD(K.ac);if(a.length===0){sD(K.ac,[{id:1,bank:'مصرف الإنماء',num:'68202787463000',iban:'SA4715000068202787463000'}])}}
+
+function showAccModal(id){document.getElementById('editAccId').value='';document.getElementById('mAccBank').value='';document.getElementById('mAccNum').value='';document.getElementById('mAccIBAN').value='';document.getElementById('accModalTitle').textContent='إضافة حساب بنكي';if(id){const a=gD(K.ac).find(x=>x.id===id);if(a){document.getElementById('editAccId').value=id;document.getElementById('mAccBank').value=a.bank;document.getElementById('mAccNum').value=a.num;document.getElementById('mAccIBAN').value=a.iban||'';document.getElementById('accModalTitle').textContent='تعديل الحساب'}}document.getElementById('accModal').classList.add('show')}
+function closeAccModal(){document.getElementById('accModal').classList.remove('show')}
+
+function saveAcc(){const bank=document.getElementById('mAccBank').value.trim();const num=document.getElementById('mAccNum').value.trim();const iban=document.getElementById('mAccIBAN').value.trim();if(!bank||!num){toast('الرجاء تعبئة الحقول المطلوبة','error');return}const a=gD(K.ac);const eid=document.getElementById('editAccId').value;if(eid){const i=a.findIndex(x=>x.id==eid);if(i>=0)a[i]={...a[i],bank,num,iban};addAudit('تعديل حساب بنكي',`${bank} - ${num}`,'edit')}else{a.push({id:Date.now(),bank,num,iban});addAudit('إضافة حساب بنكي',`${bank} - ${num}`,'create')}sD(K.ac,a);closeAccModal();renderAcc();toast('تم الحفظ','success')}
+
+// إصلاح 5: فحص الارتباط قبل حذف حساب بنكي / Fix 5: Check links before deleting account
+async function deleteAcc(id){let a=gD(K.ac);const x=a.find(v=>v.id===id);if(x){const linked=gD(K.o).filter(o=>o.sourceAccount?.num===x.num);if(linked.length>0){toast(`لا يمكن حذف هذا الحساب — مرتبط بـ ${linked.length} أمر صرف / Cannot delete: linked to ${linked.length} orders`,'error');return}}if(!await askConfirm('حذف الحساب / Delete Account','حذف هذا الحساب البنكي؟ / Delete this bank account?'))return;a=a.filter(v=>v.id!==id);sD(K.ac,a);addAudit('حذف حساب بنكي',x?.bank||'','edit');renderAcc();toast('تم الحذف','error')}
+
+function renderAcc(){const a=gD(K.ac);const c=document.getElementById('accTable');if(!a.length){c.innerHTML='<div class="empty-state"><p>لا توجد حسابات بنكية</p><button class="btn btn-accent" onclick="showAccModal()">+ إضافة حساب</button></div>';return}c.innerHTML=`<table><thead><tr><th>#</th><th>البنك</th><th>رقم الحساب</th><th>IBAN</th><th>إجراء</th></tr></thead><tbody>${a.map((v,i)=>`<tr><td>${i+1}</td><td><strong>${esc(v.bank)}</strong></td><td style="font-family:monospace;direction:ltr;text-align:right">${esc(v.num)}</td><td style="font-family:monospace;direction:ltr;text-align:right;font-size:.78rem">${esc(v.iban)||'—'}</td><td><button class="btn btn-primary btn-sm" onclick="showAccModal(${v.id})">تعديل</button> <button class="btn btn-danger btn-sm" onclick="deleteAcc(${v.id})">حذف</button></td></tr>`).join('')}</tbody></table>`}
+
+// SOURCE ACCOUNT SELECTION
+let selectedSourceAccount=null;
+function renderSourceAccounts(){const a=gD(K.ac);const c=document.getElementById('sourceAccountsList');if(!a.length){c.innerHTML='<p style="color:var(--tl);font-size:.85rem">لا توجد حسابات. <a href="#" onclick="showPage(\'accounts\');return false">أضف حساب</a></p>';return}c.innerHTML=a.map(v=>`<div class="bank-account-card ${selectedSourceAccount===v.id?'selected':''}" onclick="selectSource(${v.id})"><div><div class="ba-name">🏦 ${esc(v.bank)}</div><div class="ba-num">${esc(v.num)}</div></div><div>${selectedSourceAccount===v.id?'<span class="tag tag-approved">✓ محدد</span>':''}</div></div>`).join('');if(!selectedSourceAccount&&a.length)selectSource(a[0].id)}
+function selectSource(id){selectedSourceAccount=id;renderSourceAccounts()}
+
+// BENEFICIARIES
+function showBenModal(id){document.getElementById('editBenId').value='';document.getElementById('mBenName').value='';document.getElementById('mBenAcc').value='';document.getElementById('mBenBank').value='';document.getElementById('otherBG').style.display='none';document.getElementById('benModalTitle').textContent='إضافة مستفيد جديد';if(id){const b=gD(K.b).find(x=>x.id===id);if(b){document.getElementById('editBenId').value=id;document.getElementById('mBenName').value=b.name;document.getElementById('mBenAcc').value=b.account;const sel=document.getElementById('mBenBank');const exists=[...sel.options].some(o=>o.value===b.bank);if(exists)sel.value=b.bank;else{sel.value='أخرى';document.getElementById('mBenBankO').value=b.bank;document.getElementById('otherBG').style.display='block'}document.getElementById('benModalTitle').textContent='تعديل المستفيد'}}document.getElementById('benModal').classList.add('show')}
+function closeBenModal(){document.getElementById('benModal').classList.remove('show')}
+
+function saveBen(){const name=document.getElementById('mBenName').value.trim();const account=document.getElementById('mBenAcc').value.trim();let bank=document.getElementById('mBenBank').value;if(bank==='أخرى')bank=document.getElementById('mBenBankO').value.trim();if(!name||!account||!bank){toast('تعبئة جميع الحقول مطلوبة','error');return}const b=gD(K.b);const eid=document.getElementById('editBenId').value;if(eid){const i=b.findIndex(x=>x.id==eid);if(i>=0)b[i]={...b[i],name,account,bank};addAudit('تعديل مستفيد',name,'edit')}else{b.push({id:Date.now(),name,account,bank});addAudit('إضافة مستفيد',name,'create')}sD(K.b,b);closeBenModal();renderBen();toast('تم الحفظ','success')}
+
+// إصلاح 5: فحص الارتباط قبل حذف مستفيد / Fix 5: Check links before deleting beneficiary
+async function deleteBen(id){let b=gD(K.b);const x=b.find(v=>v.id===id);if(x){const linked=gD(K.o).filter(o=>o.beneficiary.name===x.name);if(linked.length>0){toast(`لا يمكن حذف هذا المستفيد — مرتبط بـ ${linked.length} أمر صرف / Cannot delete: linked to ${linked.length} orders`,'error');return}}if(!await askConfirm('حذف المستفيد / Delete Beneficiary','حذف هذا المستفيد؟ / Delete this beneficiary?'))return;b=b.filter(v=>v.id!==id);sD(K.b,b);addAudit('حذف مستفيد',x?.name||'','edit');renderBen();toast('تم الحذف','error')}
+
+function renderBen(){const b=gD(K.b);const s=(document.getElementById('searchBen')?.value||'').toLowerCase();const f=b.filter(v=>v.name.toLowerCase().includes(s)||v.account.toLowerCase().includes(s)||v.bank.toLowerCase().includes(s));const c=document.getElementById('benTable');if(!f.length){c.innerHTML='<div class="empty-state"><p>لا يوجد مستفيدين</p><button class="btn btn-accent" onclick="showBenModal()">+ إضافة</button></div>';return}c.innerHTML=`<table><thead><tr><th>#</th><th>الاسم</th><th>رقم الحساب / IBAN</th><th>البنك</th><th>إجراء</th></tr></thead><tbody>${f.map((v,i)=>`<tr><td>${i+1}</td><td><strong>${esc(v.name)}</strong></td><td style="direction:ltr;text-align:right;font-family:monospace;font-size:.8rem">${esc(v.account)}</td><td>${esc(v.bank)}</td><td><button class="btn btn-primary btn-sm" onclick="showBenModal(${v.id})">تعديل</button> <button class="btn btn-danger btn-sm" onclick="deleteBen(${v.id})">حذف</button></td></tr>`).join('')}</tbody></table>`}
+
+// NEW ORDER
+function initNewOrder(){if(editingOrderId)return;document.getElementById('refNumber').textContent=peekRef();document.getElementById('orderDate').value=new Date().toISOString().split('T')[0];const b=gD(K.b);const sel=document.getElementById('selectBen');sel.innerHTML='<option value="">— اختر —</option>';b.forEach(v=>sel.innerHTML+=`<option value="${v.id}">${esc(v.name)} — ${esc(v.bank)}</option>`);renderSourceAccounts();populateInitDropdown()}
+
+function fillBen(){const id=parseInt(document.getElementById('selectBen').value);if(!id)return;const b=gD(K.b).find(x=>x.id===id);if(b){document.getElementById('benName').value=b.name;document.getElementById('benAccount').value=b.account;document.getElementById('benBank').value=b.bank}}
+
+function addLine(){const tb=document.getElementById('lineItemsBody');const n=tb.rows.length+1;const tr=document.createElement('tr');tr.innerHTML=`<td>${n}</td><td><input type="text" class="line-desc" placeholder="وصف البند"></td><td><input type="number" class="line-amount" step="0.01" min="0" placeholder="0.00" oninput="calcTotal()"></td><td><button class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button></td>`;tb.appendChild(tr)}
+
+function removeLine(btn){const tb=document.getElementById('lineItemsBody');if(tb.rows.length<=1)return;btn.closest('tr').remove();[...tb.rows].forEach((r,i)=>r.cells[0].textContent=i+1);calcTotal()}
+
+function calcTotal(){let t=0;document.querySelectorAll('.line-amount').forEach(a=>t+=parseFloat(a.value)||0);document.getElementById('totalAmount').textContent=fmt(t);document.getElementById('amountWords').textContent=t>0?tafqeet(t):'—';if(document.getElementById('orderBudgetItem').value)onBudgetItemChange()}
+
+function selectPayment(el,type){document.querySelectorAll('.payment-method').forEach(m=>m.classList.remove('selected'));el.classList.add('selected');el.querySelector('input').checked=true;document.getElementById('chequeFields').style.display=type==='cheque'?'block':'none'}
+
+function getLines(){const items=[];for(const r of document.getElementById('lineItemsBody').rows){const d=r.querySelector('.line-desc')?.value?.trim()||'';const a=parseFloat(r.querySelector('.line-amount')?.value)||0;if(d||a)items.push({desc:d,amount:a})}return items}
+
+function getSourceAcc(){const a=gD(K.ac);return a.find(v=>v.id===selectedSourceAccount)||a[0]||{bank:'—',num:'—',iban:'—'}}
+
+// Phase 1: Central validation for order form
+function validateOrderForm(){
+document.querySelectorAll('.input-error').forEach(el=>el.classList.remove('input-error'));
+document.querySelectorAll('.input-error-msg').forEach(el=>el.remove());
+const errors=[];
+const markError=(el,msg)=>{if(!el)return;el.classList.add('input-error');const hint=document.createElement('small');hint.className='input-error-msg';hint.textContent=msg;el.parentNode.insertBefore(hint,el.nextSibling)};
+
+// Date
+const dateEl=document.getElementById('orderDate');
+if(!dateEl.value){errors.push('التاريخ مطلوب');markError(dateEl,'التاريخ مطلوب')}
+
+// Line items: each must have both desc + amount
+let hasValidLine=false;
+for(const r of document.getElementById('lineItemsBody').rows){
+const descEl=r.querySelector('.line-desc');const amtEl=r.querySelector('.line-amount');
+const d=descEl?.value?.trim()||'';const a=parseFloat(amtEl?.value)||0;
+if(a>0&&!d){markError(descEl,'وصف البند مطلوب');if(!errors.includes('وصف البند مطلوب لكل مبلغ'))errors.push('وصف البند مطلوب لكل مبلغ')}
+if(d&&a<=0){markError(amtEl,'أدخل مبلغ للبند');if(!errors.includes('أدخل مبلغ لكل بند'))errors.push('أدخل مبلغ لكل بند')}
+if(a<0){markError(amtEl,'المبلغ لا يمكن أن يكون سالباً');if(!errors.includes('المبلغ سالب'))errors.push('المبلغ سالب')}
+if(d&&a>0)hasValidLine=true;
+}
+if(!hasValidLine){if(!errors.length)errors.push('أدخل بند واحد على الأقل بوصف ومبلغ')}
+
+// Total integrity check
+const li=getLines();const computedTotal=li.reduce((s,i)=>s+i.amount,0);
+const displayedTotal=parseFloat(document.getElementById('totalAmount').textContent.replace(/,/g,''))||0;
+if(Math.abs(displayedTotal-computedTotal)>0.009){errors.push('المجموع غير متطابق مع البنود')}
+
+// Beneficiary
+const benNameEl=document.getElementById('benName');const benAccEl=document.getElementById('benAccount');const benBankEl=document.getElementById('benBank');
+if(!benNameEl.value.trim()){errors.push('اسم المستفيد مطلوب');markError(benNameEl,'مطلوب')}
+if(!benAccEl.value.trim()){errors.push('رقم حساب المستفيد مطلوب');markError(benAccEl,'مطلوب')}
+if(!benBankEl.value.trim()){errors.push('بنك المستفيد مطلوب');markError(benBankEl,'مطلوب')}
+
+// IBAN blocking for bank_transfer only
+const pm=document.querySelector('input[name=payment]:checked')?.value||'bank_transfer';
+if(pm==='bank_transfer'){
+const iban=benAccEl.value.replace(/\s/g,'');
+if(iban&&iban.toUpperCase().startsWith('SA')&&!/^SA\d{22}$/i.test(iban)){
+errors.push('IBAN سعودي غير صحيح (يجب 24 خانة تبدأ بـ SA)');markError(benAccEl,'IBAN غير مكتمل')}}
+
+// Cheque fields when payment is cheque
+if(pm==='cheque'){
+const chequeNoEl=document.getElementById('chequeNo');const chequeDateEl=document.getElementById('chequeDate');
+if(!chequeNoEl?.value?.trim()){errors.push('رقم الشيك مطلوب');markError(chequeNoEl,'مطلوب')}
+if(!chequeDateEl?.value){errors.push('تاريخ الشيك مطلوب');markError(chequeDateEl,'مطلوب')}}
+
+// Requester info
+const reqByEl=document.getElementById('requestedBy');const reqPosEl=document.getElementById('requesterPosition');
+if(!reqByEl.value.trim()){errors.push('اسم الطالب مطلوب');markError(reqByEl,'مطلوب')}
+if(!reqPosEl.value.trim()){errors.push('وظيفة الطالب مطلوبة');markError(reqPosEl,'مطلوب')}
+
+// Source account
+if(!selectedSourceAccount&&!gD(K.ac).length){errors.push('يجب إضافة حساب بنكي للجمعية أولاً')}
+
+// Scroll to first error
+const firstBad=document.querySelector('.input-error');
+if(firstBad){firstBad.scrollIntoView({behavior:'smooth',block:'center'});firstBad.focus()}
+
+return{valid:errors.length===0,errors}
+}
+
+// Phase 1: Clear error state on user input
+document.addEventListener('input',function(e){if(e.target.classList.contains('input-error')){e.target.classList.remove('input-error');const hint=e.target.nextElementSibling;if(hint&&hint.classList.contains('input-error-msg'))hint.remove()}});
+
+function saveOrder(){const validation=validateOrderForm();if(!validation.valid){toast(validation.errors[0],'error');return}const li=getLines();const total=li.reduce((s,i)=>s+i.amount,0);const src=getSourceAcc();const ref=nextRef();const pm=document.querySelector('input[name=payment]:checked')?.value||'bank_transfer';const projSel=document.getElementById('orderInitiative');const itemSel=document.getElementById('orderBudgetItem');const o={id:Date.now(),ref,date:document.getElementById('orderDate').value,description:document.getElementById('orderDesc').value.trim(),lineItems:li,total,totalWords:tafqeet(total),requestedBy:document.getElementById('requestedBy').value.trim(),requesterPosition:document.getElementById('requesterPosition').value.trim(),paymentMethod:pm,chequeNo:document.getElementById('chequeNo')?.value||'',chequeDate:document.getElementById('chequeDate')?.value||'',sourceAccount:src,beneficiary:{name:document.getElementById('benName').value.trim(),account:document.getElementById('benAccount').value.trim(),bank:document.getElementById('benBank').value.trim()},preparedBy:document.getElementById('preparedBy').value.trim(),approver1:document.getElementById('approver1').value.trim(),approver2:document.getElementById('approver2').value.trim(),approvals:{prepared:null,approver1:null,approver2:null},status:'pending',projectId:projSel.value?parseInt(projSel.value):null,budgetItemId:itemSel.value?parseInt(itemSel.value):null,createdAt:new Date().toISOString(),modifiedAt:null,cancelledAt:null,cancelledReason:null,cancelledBy:null};const orders=gD(K.o);orders.unshift(o);sD(K.o,orders);invalidateSpentCache();addAudit('إنشاء أمر صرف',`رقم ${ref} — ${fmt(total)} ريال — ${o.beneficiary.name}`,'create');document.getElementById('orderDesc').value='';document.getElementById('lineItemsBody').innerHTML='<tr><td>1</td><td><input type="text" class="line-desc" placeholder="وصف البند"></td><td><input type="number" class="line-amount" step="0.01" min="0" placeholder="0.00" oninput="calcTotal()"></td><td><button class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button></td></tr>';document.getElementById('totalAmount').textContent='0.00';document.getElementById('amountWords').textContent='—';document.getElementById('benName').value='';document.getElementById('benAccount').value='';document.getElementById('benBank').value='';document.getElementById('selectBen').value='';document.getElementById('refNumber').textContent=peekRef();document.getElementById('orderInitiative').value='';document.getElementById('orderBudgetItem').innerHTML='<option value="">— اختر البند —</option>';document.getElementById('budgetItemInfo').innerHTML='';toast('تم حفظ أمر الصرف ✓','success');return o}
+
+function saveAndPreview(){const o=saveOrder();if(o)showPrint(o.id)}
+
+// إصلاح 7: متغيرات الترقيم والفلترة / Fix 7: Pagination & filter globals
+let currentPage=1;let pageSize=10;let _lastFilteredOrders=[];
+
+// ORDERS LIST
+// عرض سجل الأوامر مع الفلاتر والترقيم / Render orders with filters & pagination
+function renderOrders(){const orders=gD(K.o);const s=(document.getElementById('searchOrders')?.value||'').toLowerCase();const showCancelled=document.getElementById('showCancelled')?.checked||false;
+// إصلاح 7: الفلاتر المتقدمة / Fix 7: Advanced filters
+const fStatus=document.getElementById('filterStatus')?.value||'';
+const fDateFrom=document.getElementById('filterDateFrom')?.value||'';
+const fDateTo=document.getElementById('filterDateTo')?.value||'';
+const fBen=document.getElementById('filterBeneficiary')?.value||'';
+const fInit=document.getElementById('filterInitiative')?.value||'';
+// تفعيل checkbox الملغاة تلقائياً لو اختار حالة ملغي / Auto-enable cancelled checkbox
+if(fStatus==='cancelled'){const cb=document.getElementById('showCancelled');if(cb&&!cb.checked){cb.checked=true}}
+// تعبئة dropdowns الفلاتر / Populate filter dropdowns
+populateFilterDropdowns(orders);
+let f=orders.filter(o=>{const st=getStatus(o);if(st==='cancelled'&&!showCancelled&&fStatus!=='cancelled')return false;
+if(fStatus&&st!==fStatus)return false;
+if(fDateFrom&&o.date<fDateFrom)return false;
+if(fDateTo&&o.date>fDateTo)return false;
+if(fBen&&o.beneficiary.name!==fBen)return false;
+if(fInit&&String(o.projectId)!==fInit)return false;
+return o.ref.includes(s)||o.beneficiary.name.toLowerCase().includes(s)||o.description.toLowerCase().includes(s)});
+_lastFilteredOrders=f;
+const c=document.getElementById('ordersTable');if(!f.length){c.innerHTML='<div class="empty-state"><p>لا توجد أوامر صرف</p></div>';document.getElementById('ordersPagination').innerHTML='';return}
+// إصلاح 7: ترقيم الصفحات / Fix 7: Pagination
+const totalItems=f.length;const totalPages=Math.ceil(totalItems/pageSize);
+if(currentPage>totalPages)currentPage=totalPages;if(currentPage<1)currentPage=1;
+const startIdx=(currentPage-1)*pageSize;const paged=f.slice(startIdx,startIdx+pageSize);
+const sTag=o=>{const st=getStatus(o);if(st==='cancelled')return'<span class="tag tag-cancelled">ملغي 🔴</span>';if(st==='approved')return'<span class="tag tag-approved">معتمد 🟢</span>';if(st==='partial')return'<span class="tag tag-partial">قيد الاعتماد 🟠</span>';return'<span class="tag tag-pending">جديد 🟡</span>'};
+const mTag=m=>m==='bank_transfer'?'<span class="tag tag-transfer">تحويل</span>':m==='cheque'?'<span class="tag tag-cheque">شيك</span>':'<span class="tag tag-cash">نقدي</span>';
+const btns=o=>{const st=getStatus(o);let b=`<button class="btn btn-primary btn-sm" onclick="showPrint(${o.id})">معاينة</button> `;
+if(st==='pending')b+=`<button class="btn btn-warning btn-sm" onclick="editOrder(${o.id})">✏️ تعديل</button> <button class="btn btn-accent btn-sm" onclick="showApproval(${o.id})">اعتماد</button> <button class="btn btn-danger btn-sm" onclick="delOrder(${o.id})">🗑️ حذف</button>`;
+else if(st==='partial')b+=`<button class="btn btn-accent btn-sm" onclick="showApproval(${o.id})">اعتماد</button>`;
+else if(st==='approved')b+=`<button class="btn btn-danger btn-sm" onclick="showCancelModal(${o.id})">⛔ إلغاء</button>`;
+return b};
+c.innerHTML=`<table><thead><tr><th>المرجع</th><th>التاريخ</th><th>المستفيد</th><th>المبلغ</th><th>الدفع</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>${paged.map(o=>`<tr style="${getStatus(o)==='cancelled'?'opacity:.65':''}"><td><strong>${esc(o.ref)}</strong></td><td>${fmtDate(o.date)}</td><td>${esc(o.beneficiary.name)}</td><td style="font-weight:700">${fmt(o.total)}</td><td>${mTag(o.paymentMethod)}</td><td>${sTag(o)}</td><td>${btns(o)}</td></tr>`).join('')}</tbody></table>`;
+// عرض ترقيم الصفحات / Render pagination
+renderPagination(totalItems,totalPages)}
+
+// تعبئة dropdowns الفلاتر / Populate filter dropdowns
+function populateFilterDropdowns(orders){
+const benSel=document.getElementById('filterBeneficiary');
+const initSel=document.getElementById('filterInitiative');
+if(!benSel||!initSel)return;
+const curBen=benSel.value;const curInit=initSel.value;
+const bens=[...new Set(orders.map(o=>o.beneficiary.name))].sort();
+benSel.innerHTML='<option value="">الكل / All</option>'+bens.map(n=>`<option value="${esc(n)}" ${n===curBen?'selected':''}>${esc(n)}</option>`).join('');
+const projects=gD(K.p);
+const initIds=[...new Set(orders.filter(o=>o.projectId).map(o=>o.projectId))];
+initSel.innerHTML='<option value="">الكل / All</option>'+initIds.map(id=>{const p=projects.find(x=>x.id===id);return`<option value="${id}" ${String(id)===curInit?'selected':''}>${p?esc(p.name):'مبادرة #'+id}</option>`}).join('')}
+
+// مسح الفلاتر / Clear all filters
+function clearOrderFilters(){
+document.getElementById('filterStatus').value='';
+document.getElementById('filterDateFrom').value='';
+document.getElementById('filterDateTo').value='';
+document.getElementById('filterBeneficiary').value='';
+document.getElementById('filterInitiative').value='';
+document.getElementById('searchOrders').value='';
+document.getElementById('showCancelled').checked=false;
+currentPage=1;renderOrders()}
+
+// عرض ترقيم الصفحات / Render pagination controls
+function renderPagination(totalItems,totalPages){
+const pg=document.getElementById('ordersPagination');
+if(totalPages<=1){pg.innerHTML=`<div style="font-size:.82rem;color:var(--tl)">عرض ${totalItems} أمر / Showing ${totalItems} orders</div><div></div><div></div>`;return}
+const startItem=(currentPage-1)*pageSize+1;const endItem=Math.min(currentPage*pageSize,totalItems);
+let pagesHtml='';
+const addBtn=(p,label,disabled)=>`<button class="page-btn ${p===currentPage?'active':''}" ${disabled?'disabled':''} onclick="currentPage=${p};renderOrders()">${label||p}</button>`;
+pagesHtml+=addBtn(currentPage-1,'◀ السابق',currentPage===1);
+if(totalPages<=5){for(let i=1;i<=totalPages;i++)pagesHtml+=addBtn(i)}
+else{for(let i=1;i<=3;i++)pagesHtml+=addBtn(i);if(currentPage>4)pagesHtml+='<span style="padding:0 6px">...</span>';if(currentPage>3&&currentPage<totalPages)pagesHtml+=addBtn(currentPage);if(currentPage<totalPages-1)pagesHtml+='<span style="padding:0 6px">...</span>';pagesHtml+=addBtn(totalPages)}
+pagesHtml+=addBtn(currentPage+1,'التالي ▶',currentPage===totalPages);
+pg.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:.82rem">عرض:</span><select style="padding:4px 8px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:Cairo;font-size:.8rem" onchange="pageSize=parseInt(this.value);currentPage=1;renderOrders()">${[10,25,50].map(n=>`<option value="${n}" ${pageSize===n?'selected':''}>${n}</option>`).join('')}</select><span style="font-size:.82rem">في الصفحة</span></div>
+<div style="font-size:.82rem;color:var(--tl)">عرض ${startItem}-${endItem} من ${totalItems} أمر / Showing ${startItem}-${endItem} of ${totalItems}</div>
+<div style="display:flex;gap:4px;align-items:center">${pagesHtml}</div>`}
+
+// ═══════════════════════════════════════════════════════
+// إصلاح 2: تصدير Excel عبر SheetJS / Fix 2: Excel export via SheetJS
+// ═══════════════════════════════════════════════════════
+
+// تصدير أوامر الصرف / Export orders to Excel
+function exportOrdersExcel(){
+if(typeof XLSX==='undefined'){toast('مكتبة SheetJS غير متوفرة — تحقق من الاتصال بالإنترنت','error');return}
+const orders=_lastFilteredOrders.length?_lastFilteredOrders:gD(K.o);
+if(!orders.length){toast('لا توجد أوامر للتصدير','error');return}
+const projects=gD(K.p);
+const statusMap={pending:'جديد',partial:'قيد الاعتماد',approved:'معتمد',cancelled:'ملغي'};
+const payMap={bank_transfer:'تحويل',cheque:'شيك',cash:'نقدي'};
+const rows=[['المرجع / Ref','التاريخ / Date','المستفيد / Beneficiary','بنك المستفيد / Bank','رقم الحساب / Account','المبلغ / Amount (SAR)','طريقة الدفع / Payment','الحالة / Status','المبادرة / Initiative','البند / Budget Item','الوصف / Description','الطالب / Requested By','تاريخ الإنشاء / Created']];
+let totalAmount=0;
+orders.forEach(o=>{
+const st=getStatus(o);const proj=o.projectId?projects.find(p=>p.id===o.projectId):null;
+const item=proj&&o.budgetItemId?proj.items.find(it=>it.id===o.budgetItemId):null;
+totalAmount+=o.total;
+rows.push([o.ref,o.date,o.beneficiary.name,o.beneficiary.bank,o.beneficiary.account,o.total,payMap[o.paymentMethod]||o.paymentMethod,statusMap[st]||st,proj?proj.name:'—',item?item.name:'—',o.description||'',o.requestedBy||'',o.createdAt?o.createdAt.split('T')[0]:''])});
+rows.push(['الإجمالي / Total','','','','',totalAmount,'','','','','','','']);
+const ws=XLSX.utils.aoa_to_sheet(rows);
+ws['!cols']=[{wch:14},{wch:12},{wch:22},{wch:18},{wch:26},{wch:14},{wch:12},{wch:14},{wch:20},{wch:20},{wch:30},{wch:18},{wch:14}];
+const wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'أوامر الصرف');
+const d=new Date();const dateStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+XLSX.writeFile(wb,`أوامر_الصرف_${dateStr}.xlsx`);
+addAudit('تصدير أوامر Excel',`${orders.length} أمر`,'print');
+toast(`تم تصدير ${orders.length} أمر إلى Excel ✓`,'success')}
+
+// إصلاح 4: تقييد الحذف لحالة pending فقط / Fix 4: Restrict delete to pending only
+async function delOrder(id){const orders=gD(K.o);const x=orders.find(v=>v.id===id);if(!x)return;if(getStatus(x)!=='pending'){toast('لا يمكن حذف أمر معتمد أو ملغي — استخدم الإلغاء / Cannot delete approved or cancelled order','error');return}if(!await askConfirm('حذف أمر الصرف / Delete Order','حذف أمر الصرف؟ لا يمكن التراجع. / Delete payment order? Cannot be undone.'))return;const o=orders.filter(v=>v.id!==id);sD(K.o,o);invalidateSpentCache();addAudit('حذف أمر صرف',x?.ref||'','edit');renderOrders();toast('تم الحذف','error')}
+
+// APPROVALS
+function showApproval(id){const o=gD(K.o).find(x=>x.id===id);if(!o)return;const a=o.approvals||{};const mk=(role,name,ts)=>`<div class="approval-card ${ts?'approved':''}"><div class="approval-role">${esc(role)}</div><div class="approval-name">${esc(name)}</div>${ts?`<div class="approval-stamp">✓ ${fmtDT(ts)}</div>`:`<button class="btn btn-accent btn-sm" onclick="approve(${id},'${role==='إعداد بواسطة'?'prepared':role.includes('الأول')?'approver1':'approver2'}')">اعتماد</button>`}</div>`;let ov=document.getElementById('appOv');if(!ov){ov=document.createElement('div');ov.id='appOv';ov.className='modal-overlay';document.body.appendChild(ov)}ov.innerHTML=`<div class="modal"><h3>اعتماد أمر ${esc(o.ref)}</h3><p style="margin-bottom:16px;color:var(--tl)">${fmt(o.total)} ريال — ${esc(o.beneficiary.name)}</p><div class="approvals-section">${mk('إعداد بواسطة',o.preparedBy,a.prepared)}${mk('المعتمد الأول',o.approver1,a.approver1)}${mk('المعتمد الثاني',o.approver2,a.approver2)}</div><div style="margin-top:18px;text-align:left"><button class="btn btn-outline" onclick="document.getElementById('appOv').classList.remove('show')">إغلاق</button></div></div>`;ov.classList.add('show')}
+
+// اعتماد أمر صرف مع دعم الحالة الجزئية / Approve with partial status support
+function approve(id,role){const orders=gD(K.o);const o=orders.find(x=>x.id===id);if(!o)return;if(!o.approvals)o.approvals={};o.approvals[role]=new Date().toISOString();o.status=getStatus(o);sD(K.o,orders);const names={prepared:o.preparedBy,approver1:o.approver1,approver2:o.approver2};addAudit('اعتماد',`أمر ${o.ref} — ${names[role]}`,'approve');showApproval(id);renderOrders();toast('تم الاعتماد ✓','success')}
+
+// PRINT
+function showPrint(id){const o=gD(K.o).find(x=>x.id===id);if(!o)return;const a=o.approvals||{};const src=o.sourceAccount||{bank:'مصرف الإنماء',num:'68202787463000'};const pBadge={bank_transfer:'تحويل بنكي Bank Transfer',cheque:'شيك Cheque',cash:'نقدي Cash'}[o.paymentMethod]||'';const rows=o.lineItems.map((item,i)=>`<tr><td style="text-align:center;width:8%">${i+1}</td><td>${esc(item.desc)}</td><td style="text-align:center;width:22%">${fmt(item.amount)}</td></tr>`).join('');const sigBox=(role,roleEn,name,sub,ts)=>`<div class="pd-sig ${ts?'approved':''}"><div class="sr">${esc(role)}<small>${esc(roleEn)}</small></div><div class="sn">${esc(name)}${sub?'<br><span style="font-size:6.5pt;color:#888">'+esc(sub)+'</span>':''}</div>${ts?`<div class="ss">✓ معتمد<br>${fmtDT(ts)}</div>`:'<div class="sl"></div><small>التوقيع / Signature</small>'}</div>`;
+// معلومات المبادرة للطباعة / Initiative info for print
+let initPrintRow='';
+if(o.projectId){const proj=gD(K.p).find(p=>p.id===o.projectId);if(proj){const item=proj.items.find(it=>it.id===o.budgetItemId);initPrintRow=`<table class="pd-tbl"><tr><td class="lb">المبادرة<small>Initiative</small></td><td class="val">${esc(proj.name)}</td><td class="lb">البند<small>Budget Item</small></td><td class="val">${item?esc(item.name):'—'}</td></tr></table>`}}
+document.getElementById('printDoc').innerHTML=`
+<div class="pd-head">
+<div><img src="${LOGO}" alt="الشعار" style="height:42px"></div>
+<div class="pd-head-center"><h2>PAYMENT APPROVAL FORM</h2><h3>نموذج إعتماد صرف</h3></div>
+<div class="pd-head-left">Social Responsibility Association<br>in Jeddah Province<br><span style="font-size:6.5pt">مسجلة بالمركز الوطني رقم 1896</span></div>
+</div>
+
+<div class="pd-ref"><div>المرجع <span>Ref: ${esc(o.ref)}</span></div><div>التاريخ <span>Date: ${fmtDate(o.date)}</span></div></div>
+
+<table class="pd-tbl">
+<tr><td class="lb">إسم الحساب<small>Account Name</small></td><td class="val" colspan="3">جمعية المسؤولية الاجتماعية بمحافظة جدة</td></tr>
+<tr><td class="lb">رقم الحساب<small>Account No.</small></td><td class="val-mono">${esc(src.num)}</td><td class="lb">المبلغ<small>Amount (SAR)</small></td><td class="val-big">${fmt(o.total)}</td></tr>
+</table>
+
+<div class="pd-words">${o.totalWords}</div>
+
+<table class="pd-tbl">
+<tr><td class="lb">وصف مختصر الاحتياج<small>Brief Description</small></td><td class="val" colspan="3">${esc(o.description)||'—'}</td></tr>
+</table>
+
+${initPrintRow}
+
+<table class="pd-dtl">
+<thead><tr><th style="width:8%">#</th><th>التفاصيل / Details</th><th style="width:22%">المبلغ / Amount</th></tr></thead>
+<tbody>${rows}
+<tr class="total-row"><td colspan="2" style="text-align:center">الإجمالي / Total</td><td style="text-align:center">${fmt(o.total)}</td></tr>
+</tbody></table>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+<div>
+<div class="pd-section"><span>طريقة الدفع / Payment Method</span></div>
+<table class="pd-tbl" style="margin:0">
+<tr><td class="lb" style="width:35%">طريقة الدفع<small>Method</small></td><td class="val"><span class="pd-pay-badge">${pBadge}</span></td></tr>
+<tr><td class="lb">رقم الحساب<small>Account No.</small></td><td class="val-mono">${esc(src.num)}</td></tr>
+<tr><td class="lb">إسم البنك<small>Bank Name</small></td><td class="val">${esc(src.bank)}</td></tr>
+${o.paymentMethod==='cheque'?`<tr><td class="lb">رقم الشيك<small>Cheque No.</small></td><td class="val">${esc(o.chequeNo)||'—'}</td></tr><tr><td class="lb">تاريخ الشيك<small>Date</small></td><td class="val">${o.chequeDate?fmtDate(o.chequeDate):'—'}</td></tr>`:''}
+</table>
+</div>
+<div>
+<div class="pd-section"><span>بيانات المستفيد / Beneficiary</span></div>
+<table class="pd-tbl" style="margin:0">
+<tr><td class="lb" style="width:35%">إسم المستفيد<small>Name</small></td><td class="val" style="font-weight:700">${esc(o.beneficiary.name)}</td></tr>
+<tr><td class="lb">بنك المستفيد<small>Bank</small></td><td class="val">${esc(o.beneficiary.bank)}</td></tr>
+<tr><td class="lb">رقم الحساب<small>Account / IBAN</small></td><td class="val-mono" style="direction:ltr;text-align:right;font-size:7.8pt">${esc(o.beneficiary.account)}</td></tr>
+</table>
+</div>
+</div>
+
+<div class="pd-section"><span>التوقيعات والاعتمادات / Signatures & Approvals</span></div>
+<div class="pd-req-box">
+<div class="rq-info"><div style="font-size:7pt;color:#888">مطلوب بواسطة / Requested by</div><div class="rq-name">${esc(o.requestedBy)}</div><div class="rq-pos">${esc(o.requesterPosition)}</div></div>
+<div class="rq-sig"><div class="sl"></div><small style="font-size:6.5pt;color:#888">التوقيع / Signature</small></div>
+</div>
+
+<div class="pd-sigs">
+${sigBox('إعداد بواسطة','Prepared by',esc(o.preparedBy),'المدير المالي',a.prepared)}
+${sigBox('معتمد من','Approved by',esc(o.approver1),'',a.approver1)}
+${sigBox('معتمد من','Approved by',esc(o.approver2),'',a.approver2)}
+</div>
+
+${getStatus(o)==='cancelled'?'<div class="pd-cancelled-stamp">ملغي / CANCELLED</div>':''}
+
+${getStatus(o)==='cancelled'?`<div class="pd-cancel-info"><strong>تم الإلغاء / Cancelled</strong><br>التاريخ / Date: ${fmtDT(o.cancelledAt)}<br>السبب / Reason: ${esc(o.cancelledReason)}<br>بواسطة / By: ${esc(o.cancelledBy)}</div>`:''}
+
+<div class="pd-footer">جمعية المسؤولية الاجتماعية بمحافظة جدة — نظام أوامر الصرف الإلكتروني — تم الإنشاء: ${fmtDT(o.createdAt)}${o.modifiedAt?' — آخر تعديل: '+fmtDT(o.modifiedAt):''}</div>
+`;document.getElementById('printOverlay').classList.add('show');addAudit('معاينة أمر صرف',`رقم ${o.ref}`,'print')}
+function closePrint(){document.getElementById('printOverlay').classList.remove('show')}
+
+// DASHBOARD
+// لوحة المعلومات مع بطاقة الملغي / Dashboard with cancelled card
+function renderDashboard(){const orders=gD(K.o);const bens=gD(K.b);const projects=gD(K.p);
+const nonCancelled=orders.filter(o=>getStatus(o)!=='cancelled');
+const total=nonCancelled.reduce((s,o)=>s+o.total,0);
+const approved=orders.filter(o=>getStatus(o)==='approved').length;
+const cancelled=orders.filter(o=>getStatus(o)==='cancelled').length;
+const pending=orders.filter(o=>{const st=getStatus(o);return st==='pending'||st==='partial'}).length;
+const activeProjects=projects.filter(p=>p.status==='active');
+const totalBudgets=activeProjects.reduce((s,p)=>{const itemsTotal=p.items.reduce((a,it)=>a+it.budget,0);return s+itemsTotal+(p.operatingAmount||0)},0);
+document.getElementById('statsGrid').innerHTML=`<div class="stat-card"><div class="stat-num">${orders.length}</div><div class="stat-label">إجمالي الأوامر</div></div><div class="stat-card"><div class="stat-num" style="color:var(--ac)">${approved}</div><div class="stat-label">معتمد بالكامل</div></div><div class="stat-card"><div class="stat-num" style="color:var(--wn)">${pending}</div><div class="stat-label">قيد الاعتماد</div></div><div class="stat-card"><div class="stat-num" style="color:var(--dn)">${cancelled}</div><div class="stat-label">ملغي / Cancelled</div></div><div class="stat-card"><div class="stat-num">${fmt(total)}</div><div class="stat-label">إجمالي المبالغ (ريال)</div></div><div class="stat-card"><div class="stat-num" style="color:var(--pl)">${bens.length}</div><div class="stat-label">المستفيدين</div></div><div class="stat-card"><div class="stat-num" style="color:var(--pl)">${activeProjects.length}</div><div class="stat-label">المبادرات النشطة</div></div><div class="stat-card"><div class="stat-num" style="color:var(--p)">${fmt(totalBudgets)}</div><div class="stat-label">إجمالي الموازنات النشطة</div></div>`;
+// تنبيهات الموازنات / Budget alerts
+let alerts=[];
+activeProjects.forEach(proj=>{proj.items.forEach(item=>{const adj=getItemAdjustment(proj,item.id);const adjBudget=item.budget+adj;const spent=getItemSpent(proj.id,item.id);const pct=adjBudget>0?Math.round(spent/adjBudget*100):0;if(pct>=70)alerts.push({projName:proj.name,itemName:item.name,remaining:adjBudget-spent,pct,level:pct>100?'red':pct>=85?'orange':'yellow'})})});
+alerts.sort((a,b)=>{const ord={red:0,orange:1,yellow:2};return ord[a.level]-ord[b.level]});
+let alertHtml='<div class="card" style="margin-top:16px"><div class="card-header"><h2>⚠️ بنود تحتاج انتباه / Budget Alerts</h2></div>';
+if(alerts.length===0)alertHtml+='<p style="text-align:center;color:var(--ac);padding:20px;font-weight:600">✅ جميع الموازنات في المنطقة الآمنة</p>';
+else alertHtml+=alerts.map(a=>`<div class="alert-item alert-${a.level}">${a.level==='red'?'🔴':a.level==='orange'?'🟠':'🟡'} <strong>${esc(a.projName)}</strong> — ${esc(a.itemName)} — المتبقي: ${fmt(a.remaining)} ريال (${a.pct}%)</div>`).join('');
+alertHtml+='</div>';
+const recent=nonCancelled.slice(0,5);document.getElementById('recentOrdersTable').innerHTML=recent.length?`<table><thead><tr><th>المرجع</th><th>التاريخ</th><th>المستفيد</th><th>المبلغ</th><th></th></tr></thead><tbody>${recent.map(o=>`<tr><td><strong>${esc(o.ref)}</strong></td><td>${fmtDate(o.date)}</td><td>${esc(o.beneficiary.name)}</td><td style="font-weight:700">${fmt(o.total)}</td><td><button class="btn btn-primary btn-sm" onclick="showPrint(${o.id})">معاينة</button></td></tr>`).join('')}</tbody></table>`+alertHtml:'<div class="empty-state"><p>لا توجد أوامر صرف بعد</p></div>'+alertHtml}
+
+// AUDIT
+function renderAudit(){const l=gD(K.a);const c=document.getElementById('auditList');if(!l.length){c.innerHTML='<div class="empty-state"><p>لا يوجد سجل نشاط</p></div>';return}const icons={create:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',approve:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',print:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',edit:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/></svg>',cancel:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'};c.innerHTML=l.map(v=>`<div class="audit-entry"><div class="audit-icon ${v.type||'create'}">${icons[v.type]||icons.create}</div><div class="audit-details"><div class="audit-action">${esc(v.action)}</div><div style="font-size:.82rem;margin:2px 0">${esc(v.details)}</div><div class="audit-meta"><span>👤 ${esc(v.user)}</span><span>🕐 ${fmtDT(v.timestamp)}</span><span>💻 ${esc(v.ip)}</span></div></div></div>`).join('')}
+async function clearAudit(){if(!await askConfirm('مسح السجل / Clear Audit','مسح سجل النشاط بالكامل؟ / Clear the entire audit log?'))return;sD(K.a,[]);renderAudit();toast('تم المسح')}
+
+// HELPERS
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}catch{return d}}
+function fmtDT(d){if(!d)return'';try{const dt=new Date(d);return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}catch{return d}}
+
+
+// ═══════════════════════════════════════════════════════
+// تعديل أمر الصرف / Edit Payment Order
+// ═══════════════════════════════════════════════════════
+
+// فتح أمر للتعديل / Open order for editing
+function editOrder(id){
+const o=gD(K.o).find(x=>x.id===id);
+if(!o||getStatus(o)!=='pending'){toast('لا يمكن تعديل هذا الأمر','error');return}
+editingOrderId=id;
+showPage('neworder');
+// تعبئة النموذج / Populate form
+document.getElementById('formTitle').innerHTML=`✏️ تعديل أمر صرف — <span style="color:var(--pl)">${esc(o.ref)}</span><br><small style="font-weight:400;font-size:.75rem">Edit Payment Order</small>`;
+document.getElementById('refNumber').textContent=o.ref;
+document.getElementById('refNumber').style.opacity='.6';
+document.getElementById('orderDate').value=o.date;
+document.getElementById('orderDesc').value=o.description||'';
+// المستفيد / Beneficiary
+const b=gD(K.b);const sel=document.getElementById('selectBen');
+const matchBen=b.find(v=>v.name===o.beneficiary.name);
+if(matchBen)sel.value=matchBen.id;
+document.getElementById('benName').value=o.beneficiary.name;
+document.getElementById('benAccount').value=o.beneficiary.account;
+document.getElementById('benBank').value=o.beneficiary.bank;
+// بنود / Line items
+const tb=document.getElementById('lineItemsBody');
+tb.innerHTML='';
+o.lineItems.forEach((item,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td><input type="text" class="line-desc" placeholder="وصف البند" value="${esc(item.desc)}"></td><td><input type="number" class="line-amount" step="0.01" min="0" placeholder="0.00" value="${item.amount}" oninput="calcTotal()"></td><td><button class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button></td>`;tb.appendChild(tr)});
+calcTotal();
+// طريقة الدفع / Payment method
+document.querySelectorAll('.payment-method').forEach(m=>{m.classList.remove('selected');const r=m.querySelector('input[type=radio]');if(r.value===o.paymentMethod){m.classList.add('selected');r.checked=true}});
+document.getElementById('chequeFields').style.display=o.paymentMethod==='cheque'?'block':'none';
+if(o.chequeNo)document.getElementById('chequeNo').value=o.chequeNo;
+if(o.chequeDate)document.getElementById('chequeDate').value=o.chequeDate;
+// حساب المصدر / Source account
+const accs=gD(K.ac);const srcMatch=accs.find(a=>a.num===o.sourceAccount?.num);
+if(srcMatch){selectedSourceAccount=srcMatch.id;renderSourceAccounts()}
+// بيانات الطالب / Requester info
+document.getElementById('requestedBy').value=o.requestedBy||'';
+document.getElementById('requesterPosition').value=o.requesterPosition||'';
+// المعتمدين ثابتين / Approvers readonly
+['preparedBy','approver1','approver2'].forEach(f=>{const el=document.getElementById(f);el.value=o[f]||'';el.readOnly=true;el.style.background='#eee'});
+// ربط المبادرة / Populate initiative
+populateInitDropdown();
+if(o.projectId){document.getElementById('orderInitiative').value=o.projectId;onInitiativeChange();if(o.budgetItemId)document.getElementById('orderBudgetItem').value=o.budgetItemId;onBudgetItemChange()}
+// أزرار التعديل / Edit buttons
+document.getElementById('formButtons').innerHTML=`<button class="btn btn-accent" onclick="saveEdit()">💾 حفظ التعديل / Save Edit</button> <button class="btn btn-outline" onclick="cancelEditing()">↩️ إلغاء التعديل / Cancel Edit</button>`;
+}
+
+// إلغاء وضع التعديل / Cancel edit mode
+function cancelEditing(){
+editingOrderId=null;
+document.getElementById('formTitle').textContent='نموذج إعتماد صرف جديد / New Payment Approval';
+document.getElementById('refNumber').style.opacity='1';
+['preparedBy','approver1','approver2'].forEach(f=>{const el=document.getElementById(f);el.readOnly=false;el.style.background=''});
+document.getElementById('formButtons').innerHTML=`<button class="btn btn-accent" onclick="saveOrder()">💾 حفظ أمر الصرف</button> <button class="btn btn-primary" onclick="saveAndPreview()">🖨️ حفظ ومعاينة الطباعة</button>`;
+resetForm();
+showPage('orders');
+}
+
+// تنظيف النموذج / Reset form
+function resetForm(){
+document.getElementById('orderDesc').value='';
+document.getElementById('lineItemsBody').innerHTML='<tr><td>1</td><td><input type="text" class="line-desc" placeholder="وصف البند"></td><td><input type="number" class="line-amount" step="0.01" min="0" placeholder="0.00" oninput="calcTotal()"></td><td><button class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button></td></tr>';
+document.getElementById('totalAmount').textContent='0.00';
+document.getElementById('amountWords').textContent='—';
+document.getElementById('benName').value='';
+document.getElementById('benAccount').value='';
+document.getElementById('benBank').value='';
+document.getElementById('selectBen').value='';
+document.getElementById('chequeNo').value='';
+document.getElementById('chequeDate').value='';
+document.getElementById('requestedBy').value='هبه محمد بخاري';
+document.getElementById('requesterPosition').value='الرئيس التنفيذي';
+document.getElementById('preparedBy').value='محمد إبراهيم مصطفى';
+document.getElementById('approver1').value='دليم بن سلمان آل ناشر';
+document.getElementById('approver2').value='امل بنت عبدالرحمن خان';
+document.getElementById('orderInitiative').value='';
+document.getElementById('orderBudgetItem').innerHTML='<option value="">— اختر البند —</option>';
+document.getElementById('budgetItemInfo').innerHTML='';
+}
+
+// حفظ التعديل مع المقارنة / Save edit with comparison
+function saveEdit(){
+if(!editingOrderId){toast('خطأ في وضع التعديل','error');return}
+const orders=gD(K.o);const oldOrder=orders.find(x=>x.id===editingOrderId);
+if(!oldOrder)return;
+const validation=validateOrderForm();if(!validation.valid){toast(validation.errors[0],'error');return}
+const li=getLines();const total=li.reduce((s,i)=>s+i.amount,0);
+const src=getSourceAcc();
+const pm=document.querySelector('input[name=payment]:checked')?.value||'bank_transfer';
+// بناء الأمر الجديد / Build new order data
+const newData={
+date:document.getElementById('orderDate').value,
+description:document.getElementById('orderDesc').value.trim(),
+lineItems:li,total,totalWords:tafqeet(total),
+requestedBy:document.getElementById('requestedBy').value.trim(),
+requesterPosition:document.getElementById('requesterPosition').value.trim(),
+paymentMethod:pm,
+chequeNo:document.getElementById('chequeNo')?.value||'',
+chequeDate:document.getElementById('chequeDate')?.value||'',
+sourceAccount:src,
+beneficiary:{name:document.getElementById('benName').value.trim(),account:document.getElementById('benAccount').value.trim(),bank:document.getElementById('benBank').value.trim()},
+projectId:document.getElementById('orderInitiative').value?parseInt(document.getElementById('orderInitiative').value):null,
+budgetItemId:document.getElementById('orderBudgetItem').value?parseInt(document.getElementById('orderBudgetItem').value):null
+};
+// مقارنة التغييرات / Compare changes
+const changes=[];
+if(oldOrder.date!==newData.date)changes.push({field:'التاريخ / Date',old:fmtDate(oldOrder.date),new_:fmtDate(newData.date)});
+if(oldOrder.description!==newData.description)changes.push({field:'الوصف / Description',old:oldOrder.description||'—',new_:newData.description||'—'});
+if(oldOrder.total!==newData.total)changes.push({field:'المبلغ / Amount',old:fmt(oldOrder.total),new_:fmt(newData.total)});
+if(oldOrder.totalWords!==newData.totalWords)changes.push({field:'المبلغ بالحروف / In Words',old:oldOrder.totalWords,new_:newData.totalWords});
+if(oldOrder.beneficiary.name!==newData.beneficiary.name)changes.push({field:'المستفيد / Beneficiary',old:oldOrder.beneficiary.name,new_:newData.beneficiary.name});
+if(oldOrder.beneficiary.account!==newData.beneficiary.account)changes.push({field:'حساب المستفيد / Beneficiary Acc',old:oldOrder.beneficiary.account,new_:newData.beneficiary.account});
+if(oldOrder.beneficiary.bank!==newData.beneficiary.bank)changes.push({field:'بنك المستفيد / Beneficiary Bank',old:oldOrder.beneficiary.bank,new_:newData.beneficiary.bank});
+if(oldOrder.paymentMethod!==newData.paymentMethod)changes.push({field:'طريقة الدفع / Payment',old:oldOrder.paymentMethod,new_:newData.paymentMethod});
+if(oldOrder.chequeNo!==newData.chequeNo&&newData.paymentMethod==='cheque')changes.push({field:'رقم الشيك / Cheque No',old:oldOrder.chequeNo||'—',new_:newData.chequeNo||'—'});
+if(oldOrder.chequeDate!==newData.chequeDate&&newData.paymentMethod==='cheque')changes.push({field:'تاريخ الشيك / Cheque Date',old:fmtDate(oldOrder.chequeDate),new_:fmtDate(newData.chequeDate)});
+if((oldOrder.sourceAccount?.num||'')!==(newData.sourceAccount?.num||''))changes.push({field:'حساب المصدر / Source',old:oldOrder.sourceAccount?.bank||'—',new_:newData.sourceAccount?.bank||'—'});
+if(oldOrder.requestedBy!==newData.requestedBy)changes.push({field:'الطالب / Requester',old:oldOrder.requestedBy,new_:newData.requestedBy});
+if(oldOrder.requesterPosition!==newData.requesterPosition)changes.push({field:'الوظيفة / Position',old:oldOrder.requesterPosition,new_:newData.requesterPosition});
+// مقارنة البنود / Compare line items
+const oldLI=JSON.stringify(oldOrder.lineItems);const newLI=JSON.stringify(newData.lineItems);
+if(oldLI!==newLI)changes.push({field:'البنود / Line Items',old:`${oldOrder.lineItems.length} بنود`,new_:`${newData.lineItems.length} بنود`});
+
+if(changes.length===0){toast('لم يتم إجراء أي تغيير / No changes made');return}
+// عرض Modal المقارنة / Show compare modal
+window._pendingEditData=newData;window._pendingEditChanges=changes;
+const rows=changes.map(c=>`<tr><td style="font-weight:600;font-size:.82rem">${esc(c.field)}</td><td style="color:var(--dn);font-size:.82rem">${esc(c.old)} ❌</td><td style="color:var(--ac);font-size:.82rem">${esc(c.new_)} ✅</td></tr>`).join('');
+document.getElementById('compareContent').innerHTML=`<p style="margin-bottom:10px;font-size:.85rem;color:var(--tl)">📋 أمر صرف <strong>${esc(oldOrder.ref)}</strong> — ${changes.length} تغيير</p><div class="table-wrap"><table><thead><tr><th>الحقل / Field</th><th>القيمة القديمة / Old</th><th>القيمة الجديدة / New</th></tr></thead><tbody>${rows}</tbody></table></div><p style="margin-top:8px;font-size:.78rem;color:var(--tl)">💡 الحقول غير المتغيرة لا تظهر / Unchanged fields are hidden</p>`;
+document.getElementById('compareModal').classList.add('show');
+}
+
+function closeCompareModal(){document.getElementById('compareModal').classList.remove('show')}
+
+// تأكيد التعديل / Confirm edit
+function confirmEdit(){
+const orders=gD(K.o);const idx=orders.findIndex(x=>x.id===editingOrderId);
+if(idx<0)return;const oldOrder=orders[idx];const newData=window._pendingEditData;const changes=window._pendingEditChanges;
+// تحديث الأمر / Update order
+Object.assign(orders[idx],newData,{modifiedAt:new Date().toISOString()});
+sD(K.o,orders);invalidateSpentCache();
+const changesList=changes.map(c=>c.field).join('، ');
+addAudit('تعديل أمر صرف',`رقم ${oldOrder.ref} — التغييرات: ${changesList}`,'edit');
+closeCompareModal();
+toast('تم حفظ التعديل ✓','success');
+cancelEditing();
+}
+
+// ═══════════════════════════════════════════════════════
+// إلغاء أمر صرف معتمد / Cancel Approved Payment Order
+// ═══════════════════════════════════════════════════════
+
+function showCancelModal(id){
+const o=gD(K.o).find(x=>x.id===id);
+if(!o||getStatus(o)!=='approved'){toast('لا يمكن إلغاء هذا الأمر','error');return}
+document.getElementById('cancelOrderId').value=id;
+document.getElementById('cancelReason').value='';
+document.getElementById('cancelModalInfo').innerHTML=`<div>الأمر / Order: <strong>${esc(o.ref)}</strong></div><div>المبلغ / Amount: <strong>${fmt(o.total)} ريال</strong></div><div>المستفيد / Beneficiary: <strong>${esc(o.beneficiary.name)}</strong></div>`;
+document.getElementById('cancelModal').classList.add('show');
+}
+
+function closeCancelModal(){document.getElementById('cancelModal').classList.remove('show')}
+
+// تأكيد الإلغاء / Confirm cancellation
+function confirmCancel(){
+const id=parseInt(document.getElementById('cancelOrderId').value);
+const reason=document.getElementById('cancelReason').value.trim();
+if(reason.length<5){toast('الرجاء كتابة سبب الإلغاء (5 أحرف على الأقل)','error');return}
+const orders=gD(K.o);const o=orders.find(x=>x.id===id);
+if(!o)return;
+o.cancelledAt=new Date().toISOString();
+o.cancelledReason=reason;
+o.cancelledBy='محمد إبراهيم مصطفى';
+o.status='cancelled';
+sD(K.o,orders);invalidateSpentCache();
+addAudit('إلغاء أمر صرف معتمد',`رقم ${o.ref} — السبب: ${reason}`,'cancel');
+closeCancelModal();
+toast('تم إلغاء أمر الصرف','error');
+renderOrders();
+}
+
+// ═══════════════════════════════════════════════════════
+// إدارة المبادرات / Initiatives Management
+// ═══════════════════════════════════════════════════════
+
+const DEFAULT_ITEMS=[
+{name:'المواد الأساسية / مستلزمات',type:'common'},
+{name:'المصاريف اللوجستية',type:'common'},
+{name:'المصاريف الإعلامية',type:'common'},
+{name:'المصاريف الإدارية / نثرية',type:'common'},
+{name:'الموارد البشرية / منظمين',type:'common'}
+];
+
+let currentInitId=null;
+let budgetItemCounter=100;
+
+// Cache لحساب المصروفات لكل بند / Spending cache per budget item
+let _spentCache=null;
+function buildSpentCache(){const cache={};const orders=gD(K.o);for(const o of orders){if(o.cancelledAt)continue;if(!o.projectId||!o.budgetItemId)continue;const key=o.projectId+'_'+o.budgetItemId;cache[key]=(cache[key]||0)+(o.total||0)}_spentCache=cache}
+function getItemSpent(projectId,itemId){if(!_spentCache)buildSpentCache();return _spentCache[projectId+'_'+itemId]||0}
+function invalidateSpentCache(){_spentCache=null}
+
+// حساب التعديلات على بند / Get item adjustments from amendments
+function getItemAdjustment(proj,itemId){
+if(!proj.amendments)return 0;
+let adj=0;
+proj.amendments.forEach(a=>{
+if(a.type==='transfer'){
+if(a.fromItemId===itemId)adj-=a.amount;
+if(a.toItemId===itemId)adj+=a.amount;
+}else if(a.type==='increase'&&a.toItemId===itemId){
+adj+=a.amount;
+}else if(a.type==='decrease'&&a.fromItemId===itemId){
+adj-=a.amount;
+}
+});
+return adj;
+}
+
+// عرض المبادرات / Render initiatives list
+function renderInitiatives(){
+const projects=gD(K.p);
+const s=(document.getElementById('searchInit')?.value||'').toLowerCase();
+const f=projects.filter(p=>p.name.toLowerCase().includes(s)||p.donor.toLowerCase().includes(s));
+const c=document.getElementById('initiativesList');
+if(!f.length){c.innerHTML='<div class="empty-state"><p>لا توجد مبادرات</p><button class="btn btn-accent" onclick="showInitModal()">+ إضافة مبادرة</button></div>';return}
+c.innerHTML=f.map(p=>{
+const totalBudget=p.items.reduce((a,it)=>a+it.budget,0);
+const totalAdj=p.items.reduce((a,it)=>a+getItemAdjustment(p,it.id),0);
+const adjBudget=totalBudget+totalAdj;
+const totalSpent=p.items.reduce((a,it)=>a+getItemSpent(p.id,it.id),0);
+const remaining=adjBudget-totalSpent;
+const pct=adjBudget>0?Math.round(totalSpent/adjBudget*100):0;
+const statusTag=p.status==='active'?'<span class="tag tag-active">نشطة 🟢</span>':p.status==='closed'?'<span class="tag tag-closed">مغلقة ⚫</span>':'<span class="tag tag-draft">مسودة 🟡</span>';
+const barClass=pct>100?'progress-red':pct>=85?'progress-orange':pct>=70?'progress-yellow':'progress-green';
+return`<div class="initiative-card">
+<div class="init-header"><div><div class="init-name">${esc(p.name)}</div><div class="init-donor">${esc(p.donor)} ${statusTag}</div></div></div>
+<div class="init-dates">📅 ${fmtDate(p.startDate)} — ${fmtDate(p.endDate)}</div>
+<div class="progress-bar-wrap"><div class="progress-bar-fill ${barClass}" style="width:${Math.min(pct,100)}%">${pct}%</div></div>
+<div class="init-stats">
+<span>💰 الموازنة: <strong>${fmt(adjBudget)}</strong></span>
+<span>📤 المصروف: <strong>${fmt(totalSpent)}</strong></span>
+<span>📥 المتبقي: <strong>${fmt(remaining)}</strong></span>
+</div>
+<div class="init-btns">
+<button class="btn btn-primary btn-sm" onclick="showInitDetails(${p.id})">📊 تفاصيل البنود</button>
+<button class="btn btn-outline btn-sm" onclick="showInitModal(${p.id})">✏️ تعديل</button>
+<button class="btn btn-warning btn-sm" onclick="showInitReport(${p.id})">📈 تقرير المبادرة</button>
+</div></div>`}).join('');
+}
+
+// فتح Modal مبادرة / Show initiative modal
+function showInitModal(id){
+document.getElementById('editInitId').value='';
+document.getElementById('mInitName').value='';
+document.getElementById('mInitDonor').value='';
+document.getElementById('mInitStart').value='';
+document.getElementById('mInitEnd').value='';
+document.getElementById('mInitStatus').value='draft';
+document.getElementById('mInitNotes').value='';
+document.querySelector('input[name=opType][value=percentage]').checked=true;
+document.getElementById('mOpPercent').value='8';
+document.getElementById('mOpFixed').value='';
+document.getElementById('opPercentGroup').style.display='';
+document.getElementById('opFixedGroup').style.display='none';
+document.getElementById('initModalTitle').textContent='إضافة مبادرة جديدة / New Initiative';
+budgetItemCounter=100;
+
+if(id){
+const p=gD(K.p).find(x=>x.id===id);
+if(p){
+document.getElementById('editInitId').value=id;
+document.getElementById('mInitName').value=p.name;
+document.getElementById('mInitDonor').value=p.donor;
+document.getElementById('mInitStart').value=p.startDate;
+document.getElementById('mInitEnd').value=p.endDate;
+document.getElementById('mInitStatus').value=p.status;
+document.getElementById('mInitNotes').value=p.notes||'';
+document.querySelector(`input[name=opType][value=${p.operatingType}]`).checked=true;
+if(p.operatingType==='fixed'){
+document.getElementById('opPercentGroup').style.display='none';
+document.getElementById('opFixedGroup').style.display='';
+document.getElementById('mOpFixed').value=p.operatingAmount;
+}else{
+document.getElementById('mOpPercent').value=p.operatingPercentage||8;
+}
+document.getElementById('initModalTitle').textContent='تعديل المبادرة / Edit Initiative';
+renderBudgetItems(p.items);
+updateOpCalc();
+document.getElementById('initModal').classList.add('show');
+return;
+}
+}
+// بنود افتراضية / Default items
+const defaultItems=DEFAULT_ITEMS.map((d,i)=>({id:++budgetItemCounter,name:d.name,type:d.type,budget:0,enabled:true}));
+renderBudgetItems(defaultItems);
+updateOpCalc();
+document.getElementById('initModal').classList.add('show');
+}
+
+function closeInitModal(){document.getElementById('initModal').classList.remove('show')}
+
+// عرض بنود الموازنة في Modal / Render budget items in modal
+function renderBudgetItems(items){
+const c=document.getElementById('budgetItemsContainer');
+c.innerHTML=items.map((it,i)=>`<div class="budget-item-row" data-id="${it.id}" data-type="${it.type}">
+<input type="checkbox" ${it.enabled!==false?'checked':''} onchange="updateOpCalc()">
+<input type="text" class="item-name-input" value="${esc(it.name)}" placeholder="اسم البند">
+<input type="number" class="item-budget-input" value="${it.budget||''}" step="0.01" min="0" placeholder="0.00" oninput="updateOpCalc()">
+${it.type==='custom'?`<button class="btn btn-danger btn-sm" onclick="this.closest('.budget-item-row').remove();updateOpCalc()">✕</button>`:''}
+</div>`).join('');
+}
+
+// إضافة بند مخصص / Add custom budget item
+function addCustomBudgetItem(){
+const c=document.getElementById('budgetItemsContainer');
+const div=document.createElement('div');
+div.className='budget-item-row';
+div.dataset.id=++budgetItemCounter;
+div.dataset.type='custom';
+div.innerHTML=`<input type="checkbox" checked onchange="updateOpCalc()">
+<input type="text" class="item-name-input" value="" placeholder="اسم البند الجديد">
+<input type="number" class="item-budget-input" value="" step="0.01" min="0" placeholder="0.00" oninput="updateOpCalc()">
+<button class="btn btn-danger btn-sm" onclick="this.closest('.budget-item-row').remove();updateOpCalc()">✕</button>`;
+c.appendChild(div);
+}
+
+// تحديث حساب النسبة التشغيلية / Update operating calc
+function updateOpCalc(){
+const opType=document.querySelector('input[name=opType]:checked')?.value||'percentage';
+document.getElementById('opPercentGroup').style.display=opType==='percentage'?'':'none';
+document.getElementById('opFixedGroup').style.display=opType==='fixed'?'':'none';
+const rows=document.querySelectorAll('#budgetItemsContainer .budget-item-row');
+let itemsTotal=0;
+rows.forEach(r=>{
+if(r.querySelector('input[type=checkbox]').checked){
+itemsTotal+=parseFloat(r.querySelector('.item-budget-input').value)||0;
+}
+});
+let opAmount=0;
+if(opType==='percentage'){
+const pct=parseFloat(document.getElementById('mOpPercent').value)||0;
+opAmount=Math.round(itemsTotal*pct/100*100)/100;
+document.getElementById('opCalcResult').textContent=`= ${fmt(opAmount)} ريال`;
+}else{
+opAmount=parseFloat(document.getElementById('mOpFixed').value)||0;
+}
+const grandTotal=itemsTotal+opAmount;
+document.getElementById('budgetTotals').innerHTML=`
+<div class="total-row"><span>مجموع بنود المبادرة:</span><strong>${fmt(itemsTotal)} ريال</strong></div>
+<div class="total-row"><span>النسبة التشغيلية:</span><strong>${fmt(opAmount)} ريال</strong></div>
+<div class="total-row grand"><span>إجمالي الموازنة:</span><strong>${fmt(grandTotal)} ريال</strong></div>
+<hr style="margin:8px 0">
+<div class="total-row"><span>تبرعات المبادرة المطلوبة:</span><strong>${fmt(itemsTotal)} ريال</strong></div>
+<div class="total-row"><span>تبرعات النسبة التشغيلية:</span><strong>${fmt(opAmount)} ريال</strong></div>
+<div class="total-row grand"><span>إجمالي التبرعات المطلوبة:</span><strong>${fmt(grandTotal)} ريال</strong></div>`;
+}
+
+// حفظ المبادرة / Save initiative
+function saveInitiative(){
+const name=document.getElementById('mInitName').value.trim();
+const donor=document.getElementById('mInitDonor').value.trim();
+if(!name||!donor){toast('الرجاء تعبئة اسم المبادرة والمتبرع','error');return}
+const opType=document.querySelector('input[name=opType]:checked')?.value||'percentage';
+const rows=document.querySelectorAll('#budgetItemsContainer .budget-item-row');
+const items=[];
+rows.forEach(r=>{
+if(r.querySelector('input[type=checkbox]').checked){
+const n=r.querySelector('.item-name-input').value.trim();
+const b=parseFloat(r.querySelector('.item-budget-input').value)||0;
+if(n)items.push({id:parseInt(r.dataset.id),name:n,type:r.dataset.type||'common',budget:b});
+}
+});
+if(!items.length){toast('أضف بند واحد على الأقل','error');return}
+const itemsTotal=items.reduce((a,it)=>a+it.budget,0);
+let opPercentage=0,opAmount=0;
+if(opType==='percentage'){
+opPercentage=parseFloat(document.getElementById('mOpPercent').value)||0;
+opAmount=Math.round(itemsTotal*opPercentage/100*100)/100;
+}else{
+opAmount=parseFloat(document.getElementById('mOpFixed').value)||0;
+}
+const projects=gD(K.p);
+const eid=document.getElementById('editInitId').value;
+if(eid){
+const idx=projects.findIndex(x=>x.id==eid);
+if(idx>=0){
+const oldStatus=projects[idx].status;
+projects[idx]={...projects[idx],name,donor,startDate:document.getElementById('mInitStart').value,endDate:document.getElementById('mInitEnd').value,status:document.getElementById('mInitStatus').value,notes:document.getElementById('mInitNotes').value.trim(),operatingType:opType,operatingPercentage:opPercentage,operatingAmount:opAmount,items};
+sD(K.p,projects);
+const newStatus=document.getElementById('mInitStatus').value;
+if(oldStatus!==newStatus)addAudit('تغيير حالة مبادرة',`${name} — من ${oldStatus} إلى ${newStatus}`,'edit');
+else addAudit('تعديل مبادرة',name,'edit');
+}
+}else{
+const proj={id:Date.now(),name,donor,startDate:document.getElementById('mInitStart').value,endDate:document.getElementById('mInitEnd').value,status:document.getElementById('mInitStatus').value,notes:document.getElementById('mInitNotes').value.trim(),operatingType:opType,operatingPercentage:opPercentage,operatingAmount:opAmount,items,amendments:[],createdAt:new Date().toISOString()};
+projects.push(proj);
+sD(K.p,projects);
+addAudit('إنشاء مبادرة',`${name} — ${donor}`,'create');
+}
+closeInitModal();
+renderInitiatives();
+toast('تم حفظ المبادرة ✓','success');
+}
+
+// تفاصيل بنود المبادرة / Initiative details
+function showInitDetails(id){
+currentInitId=id;
+const p=gD(K.p).find(x=>x.id===id);
+if(!p)return;
+document.getElementById('initDetailTitle').textContent=`📊 تفاصيل بنود: ${p.name}`;
+const orders=gD(K.o);
+let tableRows='';
+let totalBudget=0,totalAdj=0,totalAdjBudget=0,totalSpent=0;
+p.items.forEach(item=>{
+const adj=getItemAdjustment(p,item.id);
+const adjBudget=item.budget+adj;
+const spent=getItemSpent(p.id,item.id);
+const rem=adjBudget-spent;
+const pct=adjBudget>0?Math.round(spent/adjBudget*100):0;
+totalBudget+=item.budget;totalAdj+=adj;totalAdjBudget+=adjBudget;totalSpent+=spent;
+const barClass=pct>100?'progress-red':pct>=85?'progress-orange':pct>=70?'progress-yellow':'progress-green';
+let alert='';
+if(pct>100)alert=`<span style="color:#e74c3c;font-weight:700">🔴 تجاوز بمبلغ ${fmt(Math.abs(rem))}</span>`;
+else if(pct>=85)alert='<span style="color:#e67e22;font-weight:600">🟠 شارف على النفاد</span>';
+else if(pct>=70)alert='<span style="color:#f39c12;font-weight:600">🟡 يقترب من الحد</span>';
+tableRows+=`<tr>
+<td><strong>${esc(item.name)}</strong></td>
+<td>${fmt(item.budget)}</td>
+<td style="color:${adj>=0?'var(--ac)':'var(--dn)'}">${adj>=0?'+':''}${fmt(adj)}</td>
+<td><strong>${fmt(adjBudget)}</strong></td>
+<td>${fmt(spent)}</td>
+<td>${fmt(rem)}</td>
+<td>${pct}%</td>
+<td style="min-width:100px"><div class="progress-bar-wrap" style="height:16px"><div class="progress-bar-fill ${barClass}" style="width:${Math.min(pct,100)}%"></div></div></td>
+<td>${alert}</td>
+</tr>`;
+});
+const totalRem=totalAdjBudget-totalSpent;
+const opSpent=getItemSpent(p.id,'operating');
+const grandSpent=totalSpent+opSpent;
+const grandBudget=totalAdjBudget+(p.operatingAmount||0);
+const diff=grandBudget-grandSpent;
+tableRows+=`<tr style="background:var(--bg);font-weight:700"><td>مجموع مصاريف المبادرة</td><td>${fmt(totalBudget)}</td><td>${fmt(totalAdj)}</td><td>${fmt(totalAdjBudget)}</td><td>${fmt(totalSpent)}</td><td>${fmt(totalRem)}</td><td></td><td></td><td></td></tr>`;
+tableRows+=`<tr><td>تكاليف النسبة التشغيلية (مُلتزم بها)</td><td colspan="3">${fmt(p.operatingAmount||0)}</td><td>${fmt(opSpent)}</td><td>${fmt((p.operatingAmount||0)-opSpent)}</td><td></td><td></td><td></td></tr>`;
+tableRows+=`<tr style="background:var(--p);color:#fff;font-weight:800"><td>المجموع الكلي</td><td colspan="3">${fmt(grandBudget)}</td><td>${fmt(grandSpent)}</td><td>${fmt(diff)}</td><td></td><td></td><td></td></tr>`;
+
+document.getElementById('initDetailContent').innerHTML=`<div class="table-wrap"><table class="detail-table"><thead><tr><th>البند</th><th>المعتمدة</th><th>التعديلات</th><th>المعدّلة</th><th>الفعلي</th><th>المتبقي</th><th>%</th><th>التقدم</th><th>التنبيه</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
+
+// سجل المناقلات / Amendments log
+const amendments=p.amendments||[];
+if(amendments.length){
+document.getElementById('amendmentLog').innerHTML=`<div style="margin-top:20px"><div class="section-title">سجل المناقلات <small>Amendments Log</small></div><div class="table-wrap"><table><thead><tr><th>#</th><th>التاريخ</th><th>النوع</th><th>من</th><th>إلى</th><th>المبلغ</th><th>السبب</th></tr></thead><tbody>${amendments.map((a,i)=>{
+const fromItem=p.items.find(it=>it.id===a.fromItemId);
+const toItem=p.items.find(it=>it.id===a.toItemId);
+const typeLabel=a.type==='transfer'?'مناقلة':a.type==='increase'?'زيادة':'تخفيض';
+return`<tr><td>${i+1}</td><td>${fmtDT(a.date)}</td><td>${typeLabel}</td><td>${fromItem?esc(fromItem.name):'—'}</td><td>${toItem?esc(toItem.name):'—'}</td><td>${fmt(a.amount)}</td><td>${esc(a.reason)}</td></tr>`}).join('')}</tbody></table></div></div>`;
+}else{
+document.getElementById('amendmentLog').innerHTML='';
+}
+showPage('init-details');
+}
+
+// المناقلات / Amendments
+function showAmendmentModal(){
+if(!currentInitId)return;
+const p=gD(K.p).find(x=>x.id===currentInitId);
+if(!p||p.status!=='active'){toast('المناقلات متاحة فقط للمبادرات النشطة','error');return}
+const opts=p.items.map(it=>`<option value="${it.id}">${esc(it.name)}</option>`).join('');
+document.getElementById('amendFrom').innerHTML=opts;
+document.getElementById('amendTo').innerHTML=opts;
+document.getElementById('amendItem').innerHTML=opts;
+document.getElementById('amendAmount').value='';
+document.getElementById('amendReason').value='';
+document.querySelector('input[name=amendType][value=transfer]').checked=true;
+updateAmendFields();
+document.getElementById('amendmentModal').classList.add('show');
+}
+function closeAmendmentModal(){document.getElementById('amendmentModal').classList.remove('show')}
+
+function updateAmendFields(){
+const type=document.querySelector('input[name=amendType]:checked')?.value||'transfer';
+document.getElementById('amendTransferFields').style.display=type==='transfer'?'':'none';
+document.getElementById('amendSingleField').style.display=type!=='transfer'?'':'none';
+}
+
+function executeAmendment(){
+const type=document.querySelector('input[name=amendType]:checked')?.value||'transfer';
+const amount=parseFloat(document.getElementById('amendAmount').value)||0;
+const reason=document.getElementById('amendReason').value.trim();
+if(amount<=0){toast('أدخل مبلغ صحيح','error');return}
+if(reason.length<5){toast('أدخل سبب المناقلة (5 أحرف على الأقل)','error');return}
+const projects=gD(K.p);
+const p=projects.find(x=>x.id===currentInitId);
+if(!p)return;
+if(!p.amendments)p.amendments=[];
+let amendment={id:Date.now(),date:new Date().toISOString(),type,amount,reason};
+if(type==='transfer'){
+const fromId=parseInt(document.getElementById('amendFrom').value);
+const toId=parseInt(document.getElementById('amendTo').value);
+if(fromId===toId){toast('اختر بندين مختلفين','error');return}
+const fromItem=p.items.find(it=>it.id===fromId);
+const adj=getItemAdjustment(p,fromId);
+const adjBudget=fromItem.budget+adj;
+const spent=getItemSpent(p.id,fromId);
+if(amount>adjBudget-spent){toast('المبلغ يتجاوز المتبقي في البند المصدر','error');return}
+amendment.fromItemId=fromId;amendment.toItemId=toId;
+addAudit('مناقلة موازنة',`مبادرة ${p.name} — من ${fromItem.name} إلى ${p.items.find(it=>it.id===toId)?.name} — ${fmt(amount)} ريال`,'edit');
+}else if(type==='increase'){
+amendment.toItemId=parseInt(document.getElementById('amendItem').value);
+const itemName=p.items.find(it=>it.id===amendment.toItemId)?.name;
+addAudit('زيادة موازنة',`مبادرة ${p.name} — ${itemName} — ${fmt(amount)} ريال`,'edit');
+}else{
+amendment.fromItemId=parseInt(document.getElementById('amendItem').value);
+const itemName=p.items.find(it=>it.id===amendment.fromItemId)?.name;
+addAudit('تخفيض موازنة',`مبادرة ${p.name} — ${itemName} — ${fmt(amount)} ريال`,'edit');
+}
+p.amendments.push(amendment);
+sD(K.p,projects);
+closeAmendmentModal();
+showInitDetails(currentInitId);
+toast('تم تنفيذ المناقلة ✓','success');
+}
+
+// ربط أمر الصرف بمبادرة / Link order to initiative
+function populateInitDropdown(){
+const projects=gD(K.p).filter(p=>p.status==='active');
+const sel=document.getElementById('orderInitiative');
+sel.innerHTML='<option value="">— بدون مبادرة —</option>';
+projects.forEach(p=>sel.innerHTML+=`<option value="${p.id}">${esc(p.name)}</option>`);
+document.getElementById('orderBudgetItem').innerHTML='<option value="">— اختر البند —</option>';
+document.getElementById('budgetItemInfo').innerHTML='';
+}
+
+function onInitiativeChange(){
+const projId=parseInt(document.getElementById('orderInitiative').value);
+const itemSel=document.getElementById('orderBudgetItem');
+itemSel.innerHTML='<option value="">— اختر البند —</option>';
+document.getElementById('budgetItemInfo').innerHTML='';
+if(!projId)return;
+const p=gD(K.p).find(x=>x.id===projId);
+if(!p)return;
+p.items.forEach(it=>itemSel.innerHTML+=`<option value="${it.id}">${esc(it.name)}</option>`);
+}
+
+function onBudgetItemChange(){
+const projId=parseInt(document.getElementById('orderInitiative').value);
+const itemId=parseInt(document.getElementById('orderBudgetItem').value);
+const info=document.getElementById('budgetItemInfo');
+if(!projId||!itemId){info.innerHTML='';return}
+const p=gD(K.p).find(x=>x.id===projId);
+if(!p)return;
+const item=p.items.find(it=>it.id===itemId);
+if(!item)return;
+const adj=getItemAdjustment(p,itemId);
+const adjBudget=item.budget+adj;
+const spent=getItemSpent(projId,itemId);
+const remaining=adjBudget-spent;
+const pct=adjBudget>0?Math.round(spent/adjBudget*100):0;
+const barClass=pct>100?'progress-red':pct>=85?'progress-orange':pct>=70?'progress-yellow':'progress-green';
+const orderTotal=parseFloat(document.getElementById('totalAmount').textContent.replace(/,/g,''))||0;
+let warning='';
+if(orderTotal>remaining){
+warning=`<div class="budget-info-bar warning" style="margin-top:6px">⚠️ تنبيه: هذا الأمر سيتجاوز ميزانية البند — المتبقي: ${fmt(remaining)} — المبلغ: ${fmt(orderTotal)} — يمكنك المتابعة — التنبيه للمعلومية فقط</div>`;
+}
+info.innerHTML=`<div class="budget-info-bar">📊 المتبقي في البند: <strong>${fmt(remaining)} ريال</strong> (${pct}% مستهلك) ${pct>=70?barClass==='progress-red'?'🔴':'🟡':' 🟢'}<div class="progress-bar-wrap" style="height:14px;margin-top:6px"><div class="progress-bar-fill ${barClass}" style="width:${Math.min(pct,100)}%"></div></div></div>${warning}`;
+}
+
+// إصلاح 2: تصدير Excel تفاصيل المبادرة عبر SheetJS / Fix 2: Export initiative details via SheetJS
+function exportInitExcel(){
+if(!currentInitId)return;
+const p=gD(K.p).find(x=>x.id===currentInitId);
+if(!p)return;
+if(typeof XLSX==='undefined'){toast('مكتبة SheetJS غير متوفرة','error');return}
+const rows=[['البند','المعتمدة','التعديلات','المعدّلة','الفعلي','المتبقي','النسبة %']];
+p.items.forEach(item=>{
+const adj=getItemAdjustment(p,item.id);
+const adjBudget=item.budget+adj;
+const spent=getItemSpent(p.id,item.id);
+const rem=adjBudget-spent;
+const pct=adjBudget>0?Math.round(spent/adjBudget*100):0;
+rows.push([item.name,item.budget,adj,adjBudget,spent,rem,pct]);
+});
+const ws=XLSX.utils.aoa_to_sheet(rows);
+ws['!cols']=[{wch:25},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:10}];
+const wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'تفاصيل الموازنة');
+XLSX.writeFile(wb,`${p.name}_budget_details.xlsx`);
+addAudit('تصدير تفاصيل مبادرة Excel',p.name,'print');
+toast('تم التصدير ✓','success');
+}
+
+// ═══════════════════════════════════════════════════════
+// تقرير المبادرة / Initiative Report
+// ═══════════════════════════════════════════════════════
+
+function showInitReport(id){
+const p=gD(K.p).find(x=>x.id===id);
+if(!p)return;
+const totalItemsBudget=p.items.reduce((a,it)=>a+it.budget+getItemAdjustment(p,it.id),0);
+const opAmount=p.operatingAmount||0;
+const grandBudget=totalItemsBudget+opAmount;
+
+// حساب المصروفات / Calculate expenses
+const itemExpenses=p.items.map(it=>{
+const adj=getItemAdjustment(p,it.id);
+const spent=getItemSpent(p.id,it.id);
+return{name:it.name,spent};
+}).filter(x=>x.spent>0).sort((a,b)=>b.spent-a.spent);
+const totalSpent=itemExpenses.reduce((a,x)=>a+x.spent,0);
+const opSpent=0;
+const grandSpent=totalSpent+opAmount;
+const diff=grandBudget-grandSpent;
+
+// صفوف جدول التبرعات / Donations table
+const donationsRows=`<tr><td>تبرعات المبادرة</td><td style="text-align:left">${fmt(totalItemsBudget)}</td></tr>
+<tr><td>تبرعات النسبة التشغيلية</td><td style="text-align:left">${fmt(opAmount)}</td></tr>
+<tr class="grand-total"><td>المجموع</td><td style="text-align:left">${fmt(grandBudget)}</td></tr>`;
+
+// صفوف جدول المصروفات / Expenses table
+let expRows=itemExpenses.map(x=>`<tr><td>${esc(x.name)}</td><td style="text-align:left">${fmt(x.spent)}</td></tr>`).join('');
+expRows+=`<tr class="total-row"><td>مجموع مصاريف المبادرة</td><td style="text-align:left">${fmt(totalSpent)}</td></tr>`;
+expRows+=`<tr><td>تكاليف النسبة التشغيلية (مُلتزم بها)</td><td style="text-align:left">${fmt(opAmount)}</td></tr>`;
+expRows+=`<tr class="grand-total"><td>المجموع</td><td style="text-align:left">${fmt(grandSpent)}</td></tr>`;
+
+const statusLabel=p.status==='active'?'نشطة / Active':p.status==='closed'?'مغلقة / Closed':'مسودة / Draft';
+
+const reportHTML=`
+<div class="report-header">
+<div><img src="${LOGO}" alt="الشعار" style="height:48px"></div>
+<div class="report-header-center">
+<h2>جمعية المسؤولية الاجتماعية بمحافظة جدة</h2>
+<h3>Social Responsibility Association in Jeddah Province</h3>
+<div style="font-size:7.5pt;color:#888">مسجلة بالمركز الوطني لتنمية القطاع غير الربحي رقم (1896)</div>
+</div>
+<div style="text-align:left;font-size:7.5pt;color:#555">www.sraj.org.sa</div>
+</div>
+
+<div class="report-title">${esc(p.name)}</div>
+
+<div class="report-info-cards">
+<div class="report-info-card"><div class="label">المتبرع / Donor</div><div class="value">${esc(p.donor)}</div></div>
+<div class="report-info-card"><div class="label">الفترة / Period</div><div class="value">${fmtDate(p.startDate)} — ${fmtDate(p.endDate)}</div></div>
+<div class="report-info-card"><div class="label">الحالة / Status</div><div class="value">${statusLabel}</div></div>
+</div>
+
+<div class="report-section">تبرعات المبادرة / Initiative Donations</div>
+<table class="report-table"><thead><tr><th>البند</th><th style="text-align:left">المبلغ (ريال)</th></tr></thead><tbody>${donationsRows}</tbody></table>
+
+<div class="report-section">مصروفات المبادرة / Initiative Expenses</div>
+<table class="report-table"><thead><tr><th>البند</th><th style="text-align:left">المبلغ (ريال)</th></tr></thead><tbody>${expRows}</tbody></table>
+
+<div style="margin:12px 0;padding:10px;border-radius:var(--rs);text-align:center;font-size:11pt;font-weight:800;${diff>=0?'background:#d4edda;color:#155724':'background:#f8d7da;color:#721c24'}">
+فروقات تكاليف المبادرة: ${fmt(Math.abs(diff))} ريال ${diff>=0?'(فائض ✅)':'(عجز ⚠️)'}
+</div>
+
+<div class="report-section">الرسم البياني لمصاريف المبادرة / Expenses Chart</div>
+<div class="report-charts-grid">
+<div><canvas id="reportBarChart" width="400" height="250"></canvas></div>
+<div><canvas id="reportDoughnutChart" width="250" height="250"></canvas></div>
+</div>
+
+<div class="report-footer">
+جدة — المدينة الصناعية الأولى المبنى الإداري «مدن» | هاتف: +966 12 4222 214 | جوال: +966 534 141 020 | info@sraj.org.sa | www.sraj.org.sa<br>
+تم إنشاء التقرير من نظام أوامر الصرف الإلكتروني — ${fmtDT(new Date().toISOString())}
+</div>`;
+
+document.getElementById('reportDoc').innerHTML=reportHTML;
+document.getElementById('reportOverlay').classList.add('show');
+
+// رسم Chart.js / Draw charts
+setTimeout(()=>{
+const colors=['#1a5276','#2980b9','#27ae60','#f39c12','#e74c3c','#8e44ad','#16a085','#d35400','#2c3e50','#c0392b'];
+const labels=itemExpenses.map(x=>x.name);
+const data=itemExpenses.map(x=>x.spent);
+
+// رسم أفقي / Horizontal bar
+const barCtx=document.getElementById('reportBarChart');
+if(barCtx){
+new Chart(barCtx,{type:'bar',data:{labels,datasets:[{label:'المبلغ (ريال)',data,backgroundColor:colors.slice(0,data.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmt(c.raw)} ريال`}}},scales:{x:{ticks:{callback:v=>fmt(v)}},y:{ticks:{font:{family:'Cairo',size:10}}}}}});
+}
+
+// رسم دائري / Doughnut
+const doughCtx=document.getElementById('reportDoughnutChart');
+if(doughCtx){
+new Chart(doughCtx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors.slice(0,data.length),borderWidth:2}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Cairo',size:9}}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)} ريال (${Math.round(c.raw/totalSpent*100)}%)`}}}}});
+}
+},200);
+
+addAudit('عرض تقرير مبادرة',p.name,'print');
+}
+
+function closeReport(){document.getElementById('reportOverlay').classList.remove('show')}
+
+function printReport(){
+// تحويل canvas إلى صور للطباعة / Convert canvas to images for printing
+const canvases=document.querySelectorAll('#reportDoc canvas');
+const originals=[];
+canvases.forEach(cv=>{
+const img=document.createElement('img');
+img.src=cv.toDataURL('image/png');
+img.style.width='100%';
+img.style.maxHeight=cv.style.maxHeight||'300px';
+originals.push({canvas:cv,parent:cv.parentNode});
+cv.parentNode.replaceChild(img,cv);
+});
+window.print();
+// إصلاح 9: استعادة canvas بإعادة رسم التقرير / Fix 9: Restore canvas by re-rendering report
+setTimeout(()=>{showInitReport(currentInitId)},500);
+}
+
+// ═══════════════════════════════════════════════════════
+// إصلاح 1: النسخ الاحتياطي / Fix 1: Backup & Restore
+// ═══════════════════════════════════════════════════════
+
+let _pendingRestoreData=null;
+
+// تصدير نسخة احتياطية / Export backup
+function exportBackup(){
+const backupKeys=['pas_orders','pas_ben','pas_accounts','pas_audit','pas_counter','pas_projects'];
+const backup={_backup:{version:'1.0',date:new Date().toISOString(),system:'PAS v1A'}};
+backupKeys.forEach(k=>{const raw=localStorage.getItem(k);backup[k]=raw?JSON.parse(raw):[]});
+const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+const link=document.createElement('a');
+const d=new Date();const dateStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+link.href=URL.createObjectURL(blob);
+link.download=`backup_PAS_${dateStr}.json`;
+link.click();
+localStorage.setItem('pas_lastBackup',new Date().toISOString());
+updateLastBackupInfo();
+addAudit('تصدير نسخة احتياطية','Export backup','create');
+toast('تم تصدير النسخة الاحتياطية ✓','success');
+}
+
+// عرض تاريخ آخر نسخة / Show last backup date
+function updateLastBackupInfo(){
+const el=document.getElementById('lastBackupInfo');
+if(!el)return;
+const last=localStorage.getItem('pas_lastBackup');
+if(last){el.textContent='آخر نسخة احتياطية / Last backup: '+fmtDT(last)}
+else{el.textContent='لم يتم أخذ نسخة احتياطية بعد / No backup taken yet'}
+}
+
+// استيراد نسخة احتياطية / Import backup
+function importBackup(){document.getElementById('restoreFileInput').click()}
+
+// التحقق من سلامة النسخة الاحتياطية / Backup integrity check
+function validateBackup(data){
+const errors=[];
+if(!data||typeof data!=='object'){errors.push('الملف ليس JSON صالح / Invalid JSON');return errors}
+if(data._backup){
+if(!data._backup.version)errors.push('إصدار النسخة غير محدد / Missing version');
+if(!data._backup.system||!String(data._backup.system).startsWith('PAS'))errors.push('النسخة ليست من نظام أوامر الصرف / Not from PAS system');
+}
+if(data.pas_orders!==undefined&&!Array.isArray(data.pas_orders))errors.push('pas_orders ليس مصفوفة / not an array');
+if(data.pas_ben!==undefined&&!Array.isArray(data.pas_ben))errors.push('pas_ben ليس مصفوفة / not an array');
+if(data.pas_accounts!==undefined&&!Array.isArray(data.pas_accounts))errors.push('pas_accounts ليس مصفوفة / not an array');
+if(data.pas_audit!==undefined&&!Array.isArray(data.pas_audit))errors.push('pas_audit ليس مصفوفة / not an array');
+if(data.pas_projects!==undefined&&!Array.isArray(data.pas_projects))errors.push('pas_projects ليس مصفوفة / not an array');
+if(data.pas_orders===undefined)errors.push('الملف لا يحتوي على أوامر صرف / File missing pas_orders');
+if(Array.isArray(data.pas_orders)&&data.pas_orders.length>0){const sample=data.pas_orders[0];if(!sample.ref||!sample.beneficiary||typeof sample.total!=='number')errors.push('بنية أوامر الصرف غير صالحة / Invalid order structure')}
+return errors;
+}
+
+function handleRestoreFile(input){
+const file=input.files[0];
+if(!file)return;
+const reader=new FileReader();
+reader.onload=function(e){
+try{
+const data=JSON.parse(e.target.result);
+const _errs=validateBackup(data);if(_errs.length){toast('⚠️ '+_errs[0],'error');input.value='';return}if(!data._backup){toast('⚠️ نسخة قديمة بدون توقيع — تم القبول مع تحذير / Old backup without signature — accepted with warning','error')}
+_pendingRestoreData=data;
+const orders=Array.isArray(data.pas_orders)?data.pas_orders.length:0;
+const bens=Array.isArray(data.pas_ben)?data.pas_ben.length:0;
+const accs=Array.isArray(data.pas_accounts)?data.pas_accounts.length:0;
+const projs=Array.isArray(data.pas_projects)?data.pas_projects.length:0;
+const size=(file.size/1024).toFixed(1);
+document.getElementById('restoreModalInfo').innerHTML=
+`<div>📄 الملف / File: <strong>${file.name}</strong> (${size} KB)</div>
+<div style="margin-top:8px">📦 المحتويات / Contents:</div>
+<div style="padding:6px 14px">• ${orders} أمر صرف / orders</div>
+<div style="padding:0 14px">• ${bens} مستفيد / beneficiaries</div>
+<div style="padding:0 14px">• ${accs} حساب بنكي / accounts</div>
+<div style="padding:0 14px">• ${projs} مبادرة / initiatives</div>`;
+document.getElementById('restoreModal').classList.add('show');
+}catch(err){toast('الملف غير صالح أو تالف / Invalid backup file','error')}
+input.value='';
+};
+reader.readAsText(file);
+}
+
+function closeRestoreModal(){document.getElementById('restoreModal').classList.remove('show');_pendingRestoreData=null}
+
+function confirmRestore(){
+if(!_pendingRestoreData)return;
+const data=_pendingRestoreData;
+const validKeys=['pas_orders','pas_ben','pas_accounts','pas_audit','pas_counter','pas_projects'];
+let orderCount=0,benCount=0;
+validKeys.forEach(k=>{if(data[k]!==undefined){localStorage.setItem(k,JSON.stringify(data[k]));if(k==='pas_orders')orderCount=Array.isArray(data[k])?data[k].length:0;if(k==='pas_ben')benCount=Array.isArray(data[k])?data[k].length:0}});invalidateSpentCache();
+addAudit('استعادة نسخة احتياطية',`${orderCount} أمر + ${benCount} مستفيد`,'create');
+closeRestoreModal();
+toast('تم استعادة النسخة الاحتياطية — جاري إعادة التحميل... ✓','success');
+setTimeout(()=>{location.reload()},1000);
+}
+
+// تذكير النسخ الاحتياطي / Backup reminder check
+function checkBackupReminder(){
+const last=localStorage.getItem('pas_lastBackup');
+if(!last){toast('⚠️ لم تأخذ نسخة احتياطية بعد — يُنصح بأخذ نسخة من صفحة سجل النشاط','error');return}
+const days=Math.floor((Date.now()-new Date(last).getTime())/(1000*60*60*24));
+if(days>=7){toast(`⚠️ لم تأخذ نسخة احتياطية منذ ${days} أيام — يُنصح بأخذ نسخة`,'error')}
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded',()=>{initDefaultAccounts();renderDashboard();updateLastBackupInfo();checkBackupReminder()});
+</script>
+<!-- إصلاح 2: مكتبة SheetJS للتصدير / Fix 2: SheetJS library for Excel export -->
+<div id="confirmModal" class="modal-overlay">
+<div class="modal" style="max-width:420px">
+<h3 id="confirmTitle">تأكيد / Confirm</h3>
+<p id="confirmMessage" style="margin:12px 0;color:var(--tx)"></p>
+<div class="btn-group" style="justify-content:flex-end;margin-top:20px">
+<button class="btn btn-outline" onclick="_confirmResolve(false)">رجوع / Back</button>
+<button class="btn btn-danger" id="confirmYesBtn" onclick="_confirmResolve(true)">تأكيد / Confirm</button>
+</div>
+</div>
+</div>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.mini.min.js"></script>
+</body></html>
